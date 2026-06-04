@@ -7,6 +7,7 @@ var _secretary: Label
 var _active_box: VBoxContainer
 var _pool_box: VBoxContainer
 var _team_box: VBoxContainer
+var _chan_box: VBoxContainer
 var _cand_box: VBoxContainer
 var _overlay: Control
 var _overlay_label: Label
@@ -87,10 +88,10 @@ func _build_panel() -> void:
 	_team_box = VBoxContainer.new()
 	v.add_child(_team_box)
 	v.add_child(HSeparator.new())
-	var jr := HBoxContainer.new()
-	v.add_child(jr)
-	_lbl(jr, "🧑‍💻 Job Board:")
-	_btn(jr, "🔄", func(): _game.refresh_job_board())
+	_lbl(v, "🧑‍💻 Rekrut — pasang iklan (cost vs kualitas):")
+	_chan_box = VBoxContainer.new()
+	v.add_child(_chan_box)
+	_lbl(v, "📨 Pelamar:")
 	_cand_box = VBoxContainer.new()
 	v.add_child(_cand_box)
 
@@ -103,6 +104,7 @@ func _refresh() -> void:
 	_refresh_active()
 	_refresh_pool()
 	_refresh_team()
+	_refresh_channels()
 	_refresh_cand()
 
 func _refresh_active() -> void:
@@ -201,9 +203,24 @@ func _refresh_team() -> void:
 		_lbl(_team_box, "• %s · %s · ⚡%d%%%s · %s/bln" % [
 			t.person_name, _skills(t), int(t.stamina), tired, _money(t.salary_monthly)])
 
+func _refresh_channels() -> void:
+	for c in _chan_box.get_children():
+		c.queue_free()
+	for ch in _game.recruit_channels():
+		var cd: Dictionary = ch
+		var cost := float(ch.get("cost", 0))
+		var cnt: Array = ch.get("count", [1, 1])
+		var price := "gratis" if cost <= 0 else _money(cost)
+		var b := _btn(_chan_box, "📢 %s — %s (%d–%d pelamar)" % [
+			str(ch.get("label", "")), price, int(cnt[0]), int(cnt[1])], func(): _game.recruit(cd))
+		if not _game.can_afford_channel(ch):
+			b.disabled = true
+
 func _refresh_cand() -> void:
 	for c in _cand_box.get_children():
 		c.queue_free()
+	if _game.candidates.is_empty():
+		_lbl(_cand_box, "(belum ada pelamar — pasang iklan di atas)")
 	for cand in _game.candidates:
 		_lbl(_cand_box, "%s · %s · %s · %s/bln" % [cand.person_name, cand.type, _skills(cand), _money(cand.salary_monthly)])
 		var c2: Talent = cand

@@ -1,0 +1,10 @@
+{
+  "_note": "Channel rekrut (docs/BeJek_CoreSystems.md §3.2). cost = biaya iklan dlm 'k' Rp, dipotong saat pasang. count=[min,max] jumlah pelamar. level=[min,max] kualitas skill utama. star_chance = peluang tiap pelamar jadi 'bintang' (level dinaikkan ke star_level). Trade-off: makin mahal → kualitas/peluang bintang naik, tapi jumlah & profil beda-beda. Angka = balancing, tweak bebas.",
+  "channels": [
+    { "id": "mulut",      "label": "Mulut ke mulut", "cost": 0,     "count": [1, 2], "level": [2, 5],  "star_chance": 0.0,  "star_level": [7, 8] },
+    { "id": "koran",      "label": "Iklan Koran",    "cost": 3000,  "count": [2, 3], "level": [3, 6],  "star_chance": 0.05, "star_level": [7, 8] },
+    { "id": "internet",   "label": "Iklan Internet", "cost": 6000,  "count": [3, 4], "level": [4, 7],  "star_chance": 0.12, "star_level": [8, 9] },
+    { "id": "tv",         "label": "Iklan TV",       "cost": 15000, "count": [2, 3], "level": [5, 8],  "star_chance": 0.30, "star_level": [8, 10] },
+    { "id": "headhunter", "label": "Headhunter",     "cost": 30000, "count": [1, 1], "level": [8, 10], "star_chance": 0.0,  "star_level": [9, 10] }
+  ]
+}

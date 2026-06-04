@@ -208,5 +208,18 @@ func _initialize() -> void:
 		var feats_v: Array = DataLoader.load_json(str(v.get("file", ""))).get("features", [])
 		_ok(feats_v.size() > 0, "version_%s_has_features" % str(v.get("id", "?")))
 
+	# --- BeJek: channel rekrut (§3.2) — manifest valid, ada opsi gratis ---
+	var chans: Array = DataLoader.load_json("recruit_channels.json").get("channels", [])
+	_ok(chans.size() >= 1, "channels_loaded")
+	var free_found := false
+	for ch in chans:
+		var cnt: Array = ch.get("count", [])
+		var lvl: Array = ch.get("level", [])
+		_ok(cnt.size() == 2 and int(cnt[0]) <= int(cnt[1]), "channel_%s_count_valid" % str(ch.get("id", "?")))
+		_ok(lvl.size() == 2 and int(lvl[0]) <= int(lvl[1]), "channel_%s_level_valid" % str(ch.get("id", "?")))
+		if float(ch.get("cost", -1.0)) == 0.0:
+			free_found = true
+	_ok(free_found, "channels_have_free_option")
+
 	print("[VERIFY] PASS=%d FAIL=%d" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)

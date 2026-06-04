@@ -33,6 +33,7 @@ var _fcfg: Dictionary = {}
 var _bj: Dictionary = {}
 var _accum: float = 0.0
 var _idc: int = 0
+var _channels: Array = []      # channel rekrut (recruit_channels.json)
 
 const ROLE_SKILL := {
 	"Product": "product", "Developer": "coding", "Designer": "ui_ux",
@@ -94,8 +95,12 @@ func start_new() -> void:
 	# unit cash = ribuan Rp, jadi 1 = Rp 1.000).
 	var f := _make("Kamu (Founder)", { "product": 4, "coding": 3 }, 1)
 	talents.append(f)
-	_refresh_candidates()
-	emit_signal("notify", "Bos, kita belum punya tim & produk. Rekrut tim, lalu develop fitur pertama!")
+	# Channel rekrut (§3.2). Batch awal gratis lewat "mulut ke mulut".
+	_channels = (DataLoader.load_json("recruit_channels.json").get("channels", []) as Array).duplicate()
+	candidates.clear()
+	if not _channels.is_empty():
+		_run_channel(_channel_by_id("mulut"))
+	emit_signal("notify", "Bos, kita belum punya tim & produk. Pasang iklan buat rekrut, lalu develop fitur pertama!")
 	emit_signal("changed")
 
 func set_speed(s: int) -> void:
@@ -422,23 +427,55 @@ func hire(c: Talent) -> bool:
 	emit_signal("changed")
 	return true
 
-func refresh_job_board() -> void:
-	_refresh_candidates()
+# --- Hiring channels (§3.2): bayar iklan → batch pelamar (cost vs jumlah vs kualitas) ---
+
+## Daftar channel (untuk UI: label, cost, dll).
+func recruit_channels() -> Array:
+	return _channels
+
+func can_afford_channel(ch: Dictionary) -> bool:
+	return economy.cash >= float(ch.get("cost", 0.0))
+
+## Pasang iklan di channel: potong biaya, hasilkan batch pelamar baru (gantikan board).
+func recruit(ch: Dictionary) -> bool:
+	if ch.is_empty() or not can_afford_channel(ch):
+		emit_signal("notify", "Kas belum cukup buat pasang %s." % str(ch.get("label", "iklan")))
+		return false
+	economy.cash -= float(ch.get("cost", 0.0))
+	_run_channel(ch)
+	emit_signal("notify", "%s: %d pelamar masuk! Cek skill & gaji, lalu rekrut." % [
+		str(ch.get("label", "")), candidates.size()])
 	emit_signal("changed")
+	return true
 
 # --- helper ---
 
-func _refresh_candidates() -> void:
-	candidates.clear()
-	for role in ["Product", "Developer", "Designer", "QA"]:
-		candidates.append(_make_role(role))
+func _channel_by_id(id: String) -> Dictionary:
+	for ch in _channels:
+		if str(ch.get("id", "")) == id:
+			return ch
+	return _channels[0] if not _channels.is_empty() else {}
 
-func _make_role(role: String) -> Talent:
+## Isi `candidates` dengan batch baru sesuai distribusi channel.
+func _run_channel(ch: Dictionary) -> void:
+	candidates.clear()
+	var cr: Array = ch.get("count", [1, 2])
+	var n := randi_range(int(cr[0]), int(cr[1]))
+	for i in n:
+		candidates.append(_gen_candidate(ch))
+
+func _gen_candidate(ch: Dictionary) -> Talent:
+	const ROLES := ["Product", "Developer", "Designer", "QA"]
+	var role: String = ROLES[randi() % ROLES.size()]
 	var key: String = ROLE_SKILL.get(role, "coding")
-	var lvl := randi_range(4, 8)
+	var lr: Array = ch.get("level", [4, 8])
+	var lvl := randi_range(int(lr[0]), int(lr[1]))
+	# Bintang: peluang langka untuk pelamar berkualitas tinggi (TV paling sering).
+	if randf() < float(ch.get("star_chance", 0.0)):
+		var sr: Array = ch.get("star_level", [8, 10])
+		lvl = maxi(lvl, randi_range(int(sr[0]), int(sr[1])))
 	var d := { key: lvl }
-	# skill sekunder kecil
-	d["coding"] = int(d.get("coding", 0)) + (1 if role != "Developer" else 0)
+	d["coding"] = int(d.get("coding", 0)) + (1 if role != "Developer" else 0)  # skill sekunder kecil
 	var salary := 1000 + lvl * 320
 	return _make(NAMES[randi() % NAMES.size()], d, salary, role)
 

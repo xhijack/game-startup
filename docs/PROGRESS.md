@@ -30,6 +30,9 @@ Desain: `docs/BeJek_CoreSystems.md`.
   v1 Ojek Manual → v2 Otomasi → v3 Retensi → v4 Super-app). v1 = tutorial (langsung
   terbuka); backlog versi habis → PM bikin **proposal** (akumulasi product point) →
   versi berikutnya & fitur barunya terbuka. **Menang = semua fitur v4 dirilis.**
+- **Hiring channels (§3.2):** rekrut lewat pasang iklan berbiaya (`data/recruit_channels.json`):
+  mulut-ke-mulut (gratis) · koran · internet · TV (peluang bintang) · headhunter (mahal,
+  pasti tinggi). Tiap channel beda cost/jumlah/kualitas + peluang talent bintang.
 - Modal awal **Rp 200 jt**. Founder digaji Rp 1.000.
 - Aset CC0 (Kenney) untuk kantor + karakter, audio CC0.
 
@@ -38,15 +41,16 @@ Desain: `docs/BeJek_CoreSystems.md`.
 > Sudah dipindah ke `_advance_week()`; tension runway aktif lagi.
 
 **Data/balance:** `data/balance.json` (`feature_dev`, `bejek`), `data/bejek_versions.json`
-(roadmap 4 versi) + `data/bejek_v1..v4.json` (fitur tiap versi).
+(roadmap 4 versi) + `data/bejek_v1..v4.json` (fitur tiap versi), `data/recruit_channels.json`
+(channel rekrut).
 
 ### ▶ Tycoon (lama — model awal, masih utuh)
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**74 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+- `tests/verify_core.gd` (**86 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
   (termasuk rilis-cepat `can_release`/`security_ratio`, boost `boost_success_chance`/`resolve_boost`,
-  & integritas roadmap versi `bejek_versions.json`).
+  integritas roadmap versi `bejek_versions.json`, & channel rekrut `recruit_channels.json`).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
@@ -54,8 +58,9 @@ Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), f
 1. ✅ **Boost** opt-in (judi saat develop) — §6.4 *(selesai)*
 2. ✅ **Rush-release** (rilis cepat → cepat tapi skor turun + insiden) — §6.2 *(selesai)*
 3. ✅ **Proposal / versi v2+** (buka fitur lanjutan) — §5 *(selesai)*
-4. Hiring channels berbiaya (mulut-ke-mulut/koran/internet/TV/headhunter) — §3.2
-5. Balancing playtest (boost chance, rush incident, proposal effort, runway pacing)
+4. ✅ **Hiring channels berbiaya** (mulut/koran/internet/TV/headhunter) — §3.2 *(selesai)*
+5. Balancing playtest (boost chance, rush incident, proposal effort, biaya channel, runway pacing)
+6. Combo talent×proyek ("Not good"→"Amazing", DNA Kairosoft) — §9 P1+
 
 ## Catatan balance (perlu playtest)
 - Stamina drain/recover, pacing minggu, biaya/revenue, threshold review — semua di `data/*.json`, gampang di-tweak.
