@@ -19,6 +19,7 @@ const PHASE_LABEL := {
 
 var id: String = ""
 var label: String = ""
+var icon: String = "🔧"        # emoji identitas fitur (data/bejek_v*.json)
 var phase: String = PRD
 var dims: Dictionary = { "creativity": 0.0, "ui_ux": 0.0, "security": 0.0, "development": 0.0 }
 var bugs: float = 0.0          # bug belum diperbaiki
@@ -29,6 +30,9 @@ var _prd_progress: float = 0.0
 var _qa_progress: float = 0.0
 var dev_req: float = 50.0      # ukuran fitur (effort Development)
 
+var boost_offered: bool = false    # boost §6.4 sudah pernah ditawarkan utk fitur ini
+var boost_used: bool = false       # sudah diambil/ditolak (sekali per fitur)
+
 const MODE_LABEL := { "normal": "Normal", "kebut": "Kebut Rilis", "matang": "Matang", "riset": "Riset" }
 
 func _init(d: Dictionary = {}) -> void:
@@ -36,16 +40,18 @@ func _init(d: Dictionary = {}) -> void:
 		return
 	id = str(d.get("id", ""))
 	label = str(d.get("label", id))
+	icon = str(d.get("icon", "🔧"))
 	dev_req = float(d.get("dev_req", d.get("dev", 50.0)))
 
 func _prd_req() -> float: return dev_req * 0.4
 func _qa_req() -> float: return dev_req * 0.35
 
 ## Satu minggu kerja dari `talents` yang ditugaskan. cfg = balance.feature_dev.
-func apply_week(talents: Array, cfg: Dictionary) -> void:
+## combo = multiplier chemistry tim (lihat team_combo); 1.0 = netral.
+func apply_week(talents: Array, cfg: Dictionary, combo: float = 1.0) -> void:
 	if phase == DONE or phase == RELEASED:
 		return
-	var coef := float(cfg.get("point_coef", 1.0))
+	var coef := float(cfg.get("point_coef", 1.0)) * combo
 	var mgmt := 1.0 + _mgmt_bonus(talents, cfg)
 	# Multiplier mode fokus (cepat-vs-matang).
 	var mode: Dictionary = (cfg.get("modes", {}) as Dictionary).get(focus_mode, {})
@@ -95,6 +101,24 @@ func _sum(talents: Array, key: String) -> float:
 		s += t.get(key) * t.stamina_factor()
 	return s
 
+## Team chemistry / combo (§9 P1+, DNA Kairosoft). Makin beragam skill yang dimiliki
+## tim (product/coding/ui_ux/qa/management), makin tinggi multiplier output fitur.
+## Mengembalikan { "label": String, "mult": float, "diversity": int }. cfg = feature_dev.
+static func team_combo(team: Array, cfg: Dictionary) -> Dictionary:
+	const SKILLS := ["product", "coding", "ui_ux", "qa", "management"]
+	var diversity := 0
+	for key in SKILLS:
+		for t in team:
+			if int(t.get(key)) > 0:
+				diversity += 1
+				break
+	var tiers: Array = (cfg.get("combos", {}) as Dictionary).get("tiers", [])
+	var best := { "label": "Seadanya", "mult": 1.0, "diversity": diversity }
+	for tier in tiers:
+		if diversity >= int(tier.get("min_diversity", 0)):
+			best = { "label": str(tier.get("label", "—")), "mult": float(tier.get("mult", 1.0)), "diversity": diversity }
+	return best
+
 func _mgmt_bonus(talents: Array, cfg: Dictionary) -> float:
 	var m := 0
 	for t in talents:
@@ -112,11 +136,44 @@ func mode_label() -> String:
 
 ## Skor rilis 0..1 dari 4 dimensi (dinormalisasi ke ukuran fitur) − penalti bug.
 func score() -> float:
-	var scale := maxf(1.0, dev_req)
-	var cre := clampf(dims.creativity / (scale * 0.6), 0.0, 1.0)
-	var ux := clampf(dims.ui_ux / (scale * 0.6), 0.0, 1.0)
-	var sec := clampf(dims.security / (scale * 0.5), 0.0, 1.0)
-	var dev := clampf(dims.development / scale, 0.0, 1.0)
-	var q := (cre + ux + sec + dev) / 4.0
-	var bug_pen := clampf(bugs_found / (scale * 0.3), 0.0, 1.0) * 0.4
+	var r := dim_ratios()
+	var q: float = (r.creativity + r.ui_ux + r.security + r.development) / 4.0
+	var bug_pen := clampf(bugs_found / (maxf(1.0, dev_req) * 0.3), 0.0, 1.0) * 0.4
 	return clampf(q - bug_pen, 0.0, 1.0)
+
+## Rasio tiap dimensi 0..1 (untuk reveal rilis & skor). Kunci: creativity/ui_ux/security/development.
+func dim_ratios() -> Dictionary:
+	var scale := maxf(1.0, dev_req)
+	return {
+		"creativity": clampf(dims.creativity / (scale * 0.6), 0.0, 1.0),
+		"ui_ux": clampf(dims.ui_ux / (scale * 0.6), 0.0, 1.0),
+		"security": security_ratio(),
+		"development": clampf(dims.development / scale, 0.0, 1.0),
+	}
+
+## Progres Development 0..1 — syarat tawaran boost & ambang rilis cepat.
+func dev_progress() -> float:
+	return clampf(dims.development / maxf(1.0, dev_req), 0.0, 1.0)
+
+## Rasio Security 0..1 — dipakai skor & perhitungan risiko insiden rilis cepat.
+func security_ratio() -> float:
+	return clampf(dims.security / maxf(1.0, dev_req * 0.5), 0.0, 1.0)
+
+## Boleh dirilis bila Development (fungsi inti) sudah penuh — walau fase belum DONE
+## (= rilis cepat / §6.2). Komponen lain yang kurang jadi konsekuensi, bukan blokir.
+func can_release() -> bool:
+	return dims.development >= dev_req
+
+## Peluang sukses boost dari skill coding tim yang ditugaskan (§6.4). cfg = feature_dev.boost.
+func boost_success_chance(talents: Array, cfg: Dictionary) -> float:
+	var coding := _sum(talents, "coding")
+	var base := float(cfg.get("base_success", 0.35))
+	var per := float(cfg.get("success_per_coding", 0.04))
+	return clampf(base + coding * per, 0.0, float(cfg.get("max_success", 0.9)))
+
+## Terapkan hasil boost: sukses → lonjakan Development; gagal → bug menumpuk (§6.4).
+func resolve_boost(success: bool, cfg: Dictionary) -> void:
+	if success:
+		dims.development += dev_req * float(cfg.get("success_gain", 0.5))
+	else:
+		bugs += dev_req * float(cfg.get("fail_bugs", 0.6))

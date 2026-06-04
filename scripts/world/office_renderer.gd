@@ -18,6 +18,12 @@ const BADGE := {
 	"engineer": Color(0.27, 0.53, 0.95),
 	"designer": Color(0.85, 0.42, 0.80),
 	"marketing": Color(0.96, 0.62, 0.22),
+	# Peran BeJek (P2): badge berbeda per skill dominan.
+	"product": Color(0.55, 0.45, 0.95),
+	"coding": Color(0.27, 0.60, 0.95),
+	"ui_ux": Color(0.92, 0.40, 0.72),
+	"qa": Color(0.96, 0.62, 0.22),
+	"management": Color(0.40, 0.80, 0.45),
 }
 
 # Palet tingkat kantor (garasi→menara).

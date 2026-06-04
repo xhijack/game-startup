@@ -1,0 +1,9 @@
+{
+  "_note": "Urutan versi besar BeJek (docs/BeJek_CoreSystems.md §5 & §7). Tiap versi punya proposal: PM mengakumulasi product point sampai proposal_effort terpenuhi → membuka fitur versi itu ke backlog. v1 = tutorial (effort 0, langsung terbuka). Menang = semua fitur versi TERAKHIR dirilis. Angka effort = balancing, tweak di sini.",
+  "versions": [
+    { "id": "v1", "label": "BeJek v1 — Ojek Manual",          "file": "bejek_v1.json", "proposal_effort": 0 },
+    { "id": "v2", "label": "BeJek v2 — Otomasi & Driver",      "file": "bejek_v2.json", "proposal_effort": 45 },
+    { "id": "v3", "label": "BeJek v3 — Retensi & Monetisasi",  "file": "bejek_v3.json", "proposal_effort": 70 },
+    { "id": "v4", "label": "BeJek v4 — Ekspansi Layanan",      "file": "bejek_v4.json", "proposal_effort": 100 }
+  ]
+}

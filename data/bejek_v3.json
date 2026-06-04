@@ -1,0 +1,11 @@
+{
+  "_note": "Fitur BeJek v3 (Retensi & Monetisasi). Format: starting point dev/ui_ux/security + icon. Lihat docs/BeJek_CoreSystems.md §7. Angka = balancing.",
+  "version": "BeJek v3 — Retensi & Monetisasi",
+  "features": [
+    { "id": "promo_voucher", "label": "Kode Promo / Voucher",  "icon": "🎟️", "dev": 60, "ui_ux": 35, "security": 40 },
+    { "id": "bejek_poin",    "label": "BeJek Poin (Loyalty)",   "icon": "🏅", "dev": 65, "ui_ux": 40, "security": 35 },
+    { "id": "inapp_chat",    "label": "In-app Chat",            "icon": "💬", "dev": 70, "ui_ux": 50, "security": 45 },
+    { "id": "pesan_jadwal",  "label": "Pesan Terjadwal",        "icon": "⏰", "dev": 55, "ui_ux": 30, "security": 25 },
+    { "id": "push_notif",    "label": "Notifikasi Push",        "icon": "🔔", "dev": 50, "ui_ux": 25, "security": 30 }
+  ]
+}

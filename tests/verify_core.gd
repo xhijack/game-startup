@@ -178,5 +178,102 @@ func _initialize() -> void:
 	feat2.apply_week([Talent.new({ "product": 10, "stamina": 100 }), Talent.new({ "management": 4, "stamina": 100 })], fcfg)
 	_almost(feat2.dims.creativity, 12.0, 0.01, "feat_management_boost")
 
+	# --- BeJek: team chemistry / combo (§9 P1+) ---
+	var ccfg2 := { "combos": { "tiers": [
+		{ "min_diversity": 0, "label": "Seadanya", "mult": 1.0 },
+		{ "min_diversity": 2, "label": "Cukup", "mult": 1.05 },
+		{ "min_diversity": 3, "label": "Bagus", "mult": 1.2 },
+	] } }
+	var solo := [Talent.new({ "coding": 5, "stamina": 100 })]
+	_eq(FeatureProject.team_combo(solo, ccfg2).diversity, 1, "combo_diversity_solo")
+	_almost(float(FeatureProject.team_combo(solo, ccfg2).mult), 1.0, 0.001, "combo_solo_neutral")
+	var mixed := [Talent.new({ "product": 4, "coding": 3, "stamina": 100 }), Talent.new({ "ui_ux": 5, "stamina": 100 })]
+	_eq(FeatureProject.team_combo(mixed, ccfg2).diversity, 3, "combo_diversity_mixed")
+	_almost(float(FeatureProject.team_combo(mixed, ccfg2).mult), 1.2, 0.001, "combo_picks_highest_tier")
+	# Combo multiplier menskalakan output apply_week (fase PRD → creativity).
+	var fc := FeatureProject.new({ "id": "c", "dev": 50 })
+	fc.apply_week([Talent.new({ "product": 10, "stamina": 100 })], fcfg, 1.2)
+	_almost(fc.dims.creativity, 12.0, 0.01, "combo_scales_output")
+
+	# --- BeJek: dim_ratios (reveal rilis P2) konsisten dgn normalisasi skor ---
+	var fdr := FeatureProject.new({ "id": "dr", "dev": 50 })
+	fdr.dims.development = 50.0  # = dev_req → ratio penuh
+	_almost(float(fdr.dim_ratios().development), 1.0, 0.001, "dim_ratio_development_full")
+	fdr.dims.creativity = 15.0   # scale*0.6 = 30 → 0.5
+	_almost(float(fdr.dim_ratios().creativity), 0.5, 0.001, "dim_ratio_creativity_half")
+
+	# --- BeJek: Rilis cepat (§6.2) — Development wajib penuh, sisanya konsekuensi ---
+	var fr := FeatureProject.new({ "id": "r", "dev": 50 })
+	_ok(not fr.can_release(), "rush_blocked_when_dev_empty")
+	fr.dims.development = 50.0
+	_ok(fr.can_release(), "rush_ok_when_dev_full")
+	fr.dims.security = 0.0
+	_almost(fr.security_ratio(), 0.0, 0.001, "rush_security_ratio_empty")
+	fr.dims.security = 25.0  # dev_req*0.5 = 25 → ratio penuh
+	_almost(fr.security_ratio(), 1.0, 0.001, "rush_security_ratio_full")
+
+	# --- BeJek: Boost (§6.4) — peluang dari coding, sukses naikkan Dev, gagal tambah bug ---
+	var bcfg := { "base_success": 0.3, "success_per_coding": 0.05, "max_success": 0.9, "success_gain": 0.5, "fail_bugs": 0.6 }
+	var fb := FeatureProject.new({ "id": "b", "dev": 50 })
+	_almost(fb.boost_success_chance([Talent.new({ "coding": 8, "stamina": 100 })], bcfg), 0.7, 0.001, "boost_chance_from_coding")
+	_almost(fb.boost_success_chance([Talent.new({ "coding": 20, "stamina": 100 })], bcfg), 0.9, 0.001, "boost_chance_capped")
+	fb.dims.development = 10.0
+	fb.resolve_boost(true, bcfg)
+	_almost(fb.dims.development, 35.0, 0.001, "boost_success_raises_dev")
+	var fb2 := FeatureProject.new({ "id": "b2", "dev": 50 })
+	fb2.resolve_boost(false, bcfg)
+	_almost(fb2.bugs, 30.0, 0.001, "boost_fail_adds_bugs")
+
+	# --- BeJek: roadmap versi (§5) — manifest valid & tiap versi punya file fitur ---
+	var vman: Array = DataLoader.load_json("bejek_versions.json").get("versions", [])
+	_ok(vman.size() >= 1, "versions_manifest_loaded")
+	_eq(float(vman[0].get("proposal_effort", -1.0)), 0.0, "version_v1_is_tutorial")
+	for v in vman:
+		var feats_v: Array = DataLoader.load_json(str(v.get("file", ""))).get("features", [])
+		_ok(feats_v.size() > 0, "version_%s_has_features" % str(v.get("id", "?")))
+		var all_icons := true
+		for fe in feats_v:
+			if str(fe.get("icon", "")) == "":
+				all_icons = false
+		_ok(all_icons, "version_%s_features_have_icon" % str(v.get("id", "?")))
+	# FeatureProject menyimpan icon dari definisi.
+	_eq(FeatureProject.new({ "id": "z", "icon": "🍔", "dev": 50 }).icon, "🍔", "feature_stores_icon")
+
+	# --- BeJek: channel rekrut (§3.2) — manifest valid, ada opsi gratis ---
+	var chans: Array = DataLoader.load_json("recruit_channels.json").get("channels", [])
+	_ok(chans.size() >= 1, "channels_loaded")
+	var free_found := false
+	for ch in chans:
+		var cnt: Array = ch.get("count", [])
+		var lvl: Array = ch.get("level", [])
+		_ok(cnt.size() == 2 and int(cnt[0]) <= int(cnt[1]), "channel_%s_count_valid" % str(ch.get("id", "?")))
+		_ok(lvl.size() == 2 and int(lvl[0]) <= int(lvl[1]), "channel_%s_level_valid" % str(ch.get("id", "?")))
+		if float(ch.get("cost", -1.0)) == 0.0:
+			free_found = true
+	_ok(free_found, "channels_have_free_option")
+
+	# --- BeJek: tingkat kantor (P2) — kapasitas menaik utk tier visual ---
+	var olevels: Array = DataLoader.load_json("office.json").get("levels", [])
+	_ok(olevels.size() >= 1, "office_levels_loaded")
+	var prev_cap := -1
+	var caps_ok := true
+	for lv in olevels:
+		var cap2 := int(lv.get("capacity", 0))
+		if cap2 < prev_cap:
+			caps_ok = false
+		prev_cap = cap2
+	_ok(caps_ok, "office_capacity_ascending")
+
+	# --- BeJek: tonggak user (P2) — ambang menaik & berlabel ---
+	var miles: Array = DataLoader.load_json("balance.json").get("bejek", {}).get("milestones", [])
+	_ok(miles.size() >= 1, "milestones_loaded")
+	var prev_u := -1
+	var miles_ok := true
+	for m in miles:
+		if int(m.get("users", 0)) <= prev_u or str(m.get("label", "")) == "":
+			miles_ok = false
+		prev_u = int(m.get("users", 0))
+	_ok(miles_ok, "milestones_ascending_labeled")
+
 	print("[VERIFY] PASS=%d FAIL=%d" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)

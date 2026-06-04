@@ -7,9 +7,16 @@ var _secretary: Label
 var _active_box: VBoxContainer
 var _pool_box: VBoxContainer
 var _team_box: VBoxContainer
+var _chan_box: VBoxContainer
 var _cand_box: VBoxContainer
 var _overlay: Control
 var _overlay_label: Label
+var _review_overlay: Control
+var _review_box: VBoxContainer
+var _prev_speed: int = 0
+var _toast: PanelContainer
+var _toast_label: Label
+var _toast_tween: Tween
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -18,12 +25,16 @@ func _ready() -> void:
 	_build_hud()
 	_build_secretary()
 	_build_panel()
+	_build_review_overlay()
+	_build_toast()
 	_build_overlay()
 	if _game:
 		_game.changed.connect(_refresh)
 		_game.notify.connect(_on_notify)
 		_game.game_over.connect(_on_game_over)
 		_game.game_won.connect(_on_game_won)
+		_game.feature_released.connect(_show_review)
+		_game.milestone.connect(_show_milestone)
 	_refresh()
 
 func _build_hud() -> void:
@@ -87,10 +98,10 @@ func _build_panel() -> void:
 	_team_box = VBoxContainer.new()
 	v.add_child(_team_box)
 	v.add_child(HSeparator.new())
-	var jr := HBoxContainer.new()
-	v.add_child(jr)
-	_lbl(jr, "🧑‍💻 Job Board:")
-	_btn(jr, "🔄", func(): _game.refresh_job_board())
+	_lbl(v, "🧑‍💻 Rekrut — pasang iklan (cost vs kualitas):")
+	_chan_box = VBoxContainer.new()
+	v.add_child(_chan_box)
+	_lbl(v, "📨 Pelamar:")
 	_cand_box = VBoxContainer.new()
 	v.add_child(_cand_box)
 
@@ -103,16 +114,29 @@ func _refresh() -> void:
 	_refresh_active()
 	_refresh_pool()
 	_refresh_team()
+	_refresh_channels()
 	_refresh_cand()
 
 func _refresh_active() -> void:
 	for c in _active_box.get_children():
 		c.queue_free()
+	# Mode proposal versi (§5): PM mengakumulasi visi sebelum fitur baru terbuka.
+	if _game.proposing:
+		_lbl(_active_box, "📝 Proposal: %s" % _game.next_version_label())
+		var pl := _lbl(_active_box, "   Progres visi: %d%%" % int(_game.proposal_pct() * 100))
+		pl.add_theme_color_override("font_color", Color(0.5, 0.85, 1))
+		var ph := _lbl(_active_box, "   → butuh: Product (PM) merumuskan roadmap")
+		ph.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
+		_assign_roster()
+		return
 	var a = _game.active
 	if a == null:
-		_lbl(_active_box, "(belum ada — pilih dari backlog)")
+		if _game.can_propose():
+			_lbl(_active_box, "(backlog %s habis — buat proposal versi berikutnya ↓)" % _game.current_version_label())
+		else:
+			_lbl(_active_box, "(belum ada — pilih dari backlog)")
 		return
-	_lbl(_active_box, "%s — fase: %s" % [a.label, a.phase_label()])
+	_lbl(_active_box, "%s %s — fase: %s" % [a.icon, a.label, a.phase_label()])
 	if not a.is_done():
 		var hint := _lbl(_active_box, "   → butuh: %s" % _game.phase_need())
 		hint.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
@@ -129,42 +153,88 @@ func _refresh_active() -> void:
 		_lbl(_active_box, "   %s: %d" % [dim[1], int(a.dims[dim[0]])])
 	if a.bugs_found > 0.5:
 		_lbl(_active_box, "   🐞 Bug ditemukan: %d" % int(a.bugs_found))
+	# Boost (§6.4): tawaran judi opt-in di tengah Development.
+	if _game.boost_pending:
+		var bl := _lbl(_active_box, "💡 Terobosan ditawarkan! Sukses %d%% → lonjakan Dev · gagal → bug." % int(_game.boost_chance() * 100))
+		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		bl.add_theme_color_override("font_color", Color(1, 0.8, 0.3))
+		var brow := HBoxContainer.new()
+		_active_box.add_child(brow)
+		var ab := _btn(brow, "✅ Ambil", func(): _game.accept_boost())
+		ab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var db := _btn(brow, "❌ Tolak", func(): _game.decline_boost())
+		db.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if a.is_done():
 		var b := _btn(_active_box, "🚀 RILIS (skor %d%%)" % int(a.score() * 100), func(): _game.release())
 		b.add_theme_color_override("font_color", Color(0.4, 1, 0.5))
 	else:
+		# Rilis cepat (§6.2): aktif begitu Development penuh, walau belum matang.
+		if a.can_release():
+			var rb := _btn(_active_box, "⚡ Rilis Cepat (skor %d%% — berisiko)" % int(a.score() * 100), func(): _game.release())
+			rb.add_theme_color_override("font_color", Color(1, 0.6, 0.3))
 		# Roster: tugaskan / tarik employee dari fitur ini (tombol full-width).
-		_lbl(_active_box, "Tugaskan tim:")
-		for t in _game.talents:
-			var on: bool = _game.is_assigned(t)
-			var tired := " 😴" if t.stamina <= 30 else ""
-			var ct: Talent = t
-			_btn(_active_box, "%s %s ⚡%d%%%s — %s" % [
-				"✅" if on else "⬜", t.person_name, int(t.stamina), tired,
-				"Tarik" if on else "Tugaskan"], func(): _game.toggle_assign(ct))
+		_assign_roster()
+
+## Roster tugaskan/tarik tim — dipakai fase develop fitur & proposal versi.
+func _assign_roster() -> void:
+	_lbl(_active_box, "Tugaskan tim:")
+	for t in _game.talents:
+		var on: bool = _game.is_assigned(t)
+		var tired := " 😴" if t.stamina <= 30 else ""
+		var ct: Talent = t
+		_btn(_active_box, "%s %s ⚡%d%%%s — %s" % [
+			"✅" if on else "⬜", t.person_name, int(t.stamina), tired,
+			"Tarik" if on else "Tugaskan"], func(): _game.toggle_assign(ct))
 
 func _refresh_pool() -> void:
 	for c in _pool_box.get_children():
 		c.queue_free()
+	_lbl(_pool_box, "Versi aktif: %s" % _game.current_version_label())
+	if _game.proposing:
+		_lbl(_pool_box, "(proposal versi berikutnya sedang digarap…)")
+		return
 	if _game.active != null:
 		_lbl(_pool_box, "(selesaikan fitur aktif dulu)")
 		return
 	for fd in _game.pool:
 		var cf: Dictionary = fd
-		_btn(_pool_box, "▶ Develop: %s (%d)" % [str(fd.get("label", "")), int(fd.get("dev", 50))],
+		_btn(_pool_box, "▶ %s %s (%d)" % [str(fd.get("icon", "🔧")), str(fd.get("label", "")), int(fd.get("dev", 50))],
 			func(): _game.develop(cf))
+	# Proposal versi lanjutan (§5) — muncul saat backlog versi ini habis.
+	if _game.can_propose():
+		var nb := _btn(_pool_box, "📝 Buat Proposal: %s" % _game.next_version_label(), func(): _game.start_proposal())
+		nb.add_theme_color_override("font_color", Color(0.5, 0.85, 1))
 
 func _refresh_team() -> void:
 	for c in _team_box.get_children():
 		c.queue_free()
+	# Team chemistry / combo (§9 P1+): tim makin lengkap → output fitur naik.
+	var combo: Dictionary = _game.team_combo_info()
+	var cl := _lbl(_team_box, "🧪 Chemistry: %s ×%.2f" % [str(combo.label), float(combo.mult)])
+	cl.add_theme_color_override("font_color", Color(0.6, 0.9, 1))
 	for t in _game.talents:
 		var tired := " 😴" if t.stamina <= 30 else ""
 		_lbl(_team_box, "• %s · %s · ⚡%d%%%s · %s/bln" % [
 			t.person_name, _skills(t), int(t.stamina), tired, _money(t.salary_monthly)])
 
+func _refresh_channels() -> void:
+	for c in _chan_box.get_children():
+		c.queue_free()
+	for ch in _game.recruit_channels():
+		var cd: Dictionary = ch
+		var cost := float(ch.get("cost", 0))
+		var cnt: Array = ch.get("count", [1, 1])
+		var price := "gratis" if cost <= 0 else _money(cost)
+		var b := _btn(_chan_box, "📢 %s — %s (%d–%d pelamar)" % [
+			str(ch.get("label", "")), price, int(cnt[0]), int(cnt[1])], func(): _game.recruit(cd))
+		if not _game.can_afford_channel(ch):
+			b.disabled = true
+
 func _refresh_cand() -> void:
 	for c in _cand_box.get_children():
 		c.queue_free()
+	if _game.candidates.is_empty():
+		_lbl(_cand_box, "(belum ada pelamar — pasang iklan di atas)")
 	for cand in _game.candidates:
 		_lbl(_cand_box, "%s · %s · %s · %s/bln" % [cand.person_name, cand.type, _skills(cand), _money(cand.salary_monthly)])
 		var c2: Talent = cand
@@ -182,18 +252,120 @@ func _skills(t: Talent) -> String:
 func _on_notify(msg: String) -> void:
 	if _secretary:
 		_secretary.text = msg
-	Audio.play("confirm")
+	# Sound cue sesuai jenis notifikasi (P2 audio polish).
+	if msg.begins_with("🏆"):
+		pass  # tonggak: audio ditangani _show_milestone (jingle_win)
+	elif msg.begins_with("⚠️") or msg.begins_with("💥"):
+		Audio.play("error")
+	elif msg.begins_with("📰") or msg.begins_with("🎯") or msg.begins_with("🚀"):
+		Audio.jingle("jingle_event")
+	else:
+		Audio.play("confirm")
+
+# --- Toast tonggak pertumbuhan user (P2) ---
+
+func _build_toast() -> void:
+	_toast = PanelContainer.new()
+	_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_toast.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_toast.offset_top = 64
+	_toast.visible = false
+	add_child(_toast)
+	_toast_label = Label.new()
+	_toast_label.add_theme_font_size_override("font_size", 20)
+	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast.add_child(_toast_label)
+
+func _show_milestone(info: Dictionary) -> void:
+	_toast_label.text = "🏆 %s" % str(info.get("label", ""))
+	_toast.visible = true
+	_toast.modulate = Color(1, 1, 1, 0)
+	Audio.jingle("jingle_win")
+	if _toast_tween and _toast_tween.is_valid():
+		_toast_tween.kill()
+	_toast_tween = create_tween()
+	_toast_tween.tween_property(_toast, "modulate:a", 1.0, 0.3)
+	_toast_tween.tween_interval(2.4)
+	_toast_tween.tween_property(_toast, "modulate:a", 0.0, 0.7)
+	_toast_tween.tween_callback(func(): _toast.visible = false)
 
 func _on_game_over(reason: String) -> void:
+	_review_overlay.visible = false
 	_overlay_label.text = "💀 GAME OVER\n%s" % reason
 	_overlay.visible = true
 	Audio.play("error")
 
 func _on_game_won(u: int) -> void:
-	_overlay_label.text = "🎉 BeJek v1 SUKSES!\nSemua fitur dirilis · %s user · %s" % [
-		_grp(u), _money(_game.economy.cash)]
+	_review_overlay.visible = false
+	_overlay_label.text = "🎉 %s SUKSES!\nSemua versi dirilis · %s user · %s" % [
+		_game.current_version_label(), _grp(u), _money(_game.economy.cash)]
 	_overlay.visible = true
 	Audio.jingle("jingle_win")
+
+# --- Reveal rilis (P2): layar skor review animasi ala Game Dev Story ---
+
+func _build_review_overlay() -> void:
+	_review_overlay = Control.new()
+	_review_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_review_overlay.visible = false
+	add_child(_review_overlay)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.66)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_review_overlay.add_child(dim)
+	var cc := CenterContainer.new()
+	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_review_overlay.add_child(cc)
+	var pan := PanelContainer.new()
+	cc.add_child(pan)
+	_review_box = VBoxContainer.new()
+	_review_box.custom_minimum_size = Vector2(380, 0)
+	_review_box.add_theme_constant_override("separation", 7)
+	pan.add_child(_review_box)
+
+func _show_review(info: Dictionary) -> void:
+	for c in _review_box.get_children():
+		c.queue_free()
+	# Jeda saat reveal; speed dipulihkan saat pemain klik Lanjut.
+	_prev_speed = _game.speed
+	_game.set_speed(0)
+	var title := "🚀 RILIS: %s %s%s" % [str(info.get("icon", "")), str(info.get("label", "")), "  ⚡cepat" if info.get("rushed", false) else ""]
+	var tl := _lbl(_review_box, title)
+	tl.add_theme_font_size_override("font_size", 19)
+	# Bar per dimensi, diisi via tween.
+	var ratios: Dictionary = info.get("ratios", {})
+	var bars: Array = []
+	for d in [["creativity", "Creativity"], ["ui_ux", "UI/UX"], ["security", "Security"], ["development", "Development"]]:
+		var row := HBoxContainer.new()
+		_review_box.add_child(row)
+		var nl := _lbl(row, d[1])
+		nl.custom_minimum_size = Vector2(100, 0)
+		var pb := ProgressBar.new()
+		pb.custom_minimum_size = Vector2(220, 14)
+		pb.max_value = 1.0
+		pb.value = 0.0
+		pb.show_percentage = false
+		row.add_child(pb)
+		bars.append([pb, float(ratios.get(d[0], 0.0))])
+	_review_box.add_child(HSeparator.new())
+	var review: int = int(info.get("review", 0))
+	var scl := _lbl(_review_box, "⭐ Review: 0 / 40")
+	scl.add_theme_font_size_override("font_size", 22)
+	scl.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	_lbl(_review_box, "Verdict: %s" % str(info.get("verdict", "")))
+	_lbl(_review_box, "👥 +%s user" % _grp(int(info.get("gained", 0))))
+	var lost := int(info.get("incident_lost", 0))
+	if lost > 0:
+		var il := _lbl(_review_box, "⚠️ Insiden: -%s user kabur (Security tipis)" % _grp(lost))
+		il.add_theme_color_override("font_color", Color(1, 0.4, 0.35))
+	_btn(_review_box, "Lanjut ▶", func(): _review_overlay.visible = false; _game.set_speed(_prev_speed))
+	_review_overlay.visible = true
+	# Animasi: bar terisi + skor menghitung naik.
+	var tw := create_tween()
+	tw.set_parallel(true)
+	for b in bars:
+		tw.tween_property(b[0], "value", float(b[1]), 0.6).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_method(func(v: float): scl.text = "⭐ Review: %d / 40" % int(round(v)), 0.0, float(review), 0.7)
 
 func _build_overlay() -> void:
 	_overlay = Control.new()
