@@ -238,5 +238,17 @@ func _initialize() -> void:
 			free_found = true
 	_ok(free_found, "channels_have_free_option")
 
+	# --- BeJek: tingkat kantor (P2) — kapasitas menaik utk tier visual ---
+	var olevels: Array = DataLoader.load_json("office.json").get("levels", [])
+	_ok(olevels.size() >= 1, "office_levels_loaded")
+	var prev_cap := -1
+	var caps_ok := true
+	for lv in olevels:
+		var cap2 := int(lv.get("capacity", 0))
+		if cap2 < prev_cap:
+			caps_ok = false
+		prev_cap = cap2
+	_ok(caps_ok, "office_capacity_ascending")
+
 	print("[VERIFY] PASS=%d FAIL=%d" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)

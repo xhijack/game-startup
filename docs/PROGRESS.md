@@ -38,6 +38,10 @@ Desain: `docs/BeJek_CoreSystems.md`.
   (skill product/coding/ui_ux/qa/management beragam) → tier chemistry naik
   (Seadanya→Cukup→Bagus→Mantap→Luar Biasa) → **multiplier output fitur & proposal**.
   Mendorong rekrut beragam. Tiers di `data/balance.json` (`feature_dev.combos`).
+- **(P2) Kantor visual tumbuh:** ruangan upgrade otomatis seiring ukuran tim
+  (Garasi→Ruko→Kantor→Menara, kapasitas dari `data/office.json`) — meja & pekerja
+  pixel CC0 (Kenney) bertambah, badge warna per peran, banner aktivitas in-world
+  (fitur/fase/proposal). Audio cue: rilis/unlock → jingle, insiden → error.
 - Modal awal **Rp 200 jt**. Founder digaji Rp 1.000.
 - Aset CC0 (Kenney) untuk kantor + karakter, audio CC0.
 
@@ -53,9 +57,9 @@ Desain: `docs/BeJek_CoreSystems.md`.
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**~85 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+- `tests/verify_core.gd` (**~82 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
   (termasuk rilis-cepat `can_release`/`security_ratio`, boost `boost_success_chance`/`resolve_boost`,
-  team chemistry `team_combo`, integritas roadmap versi `bejek_versions.json`, & channel rekrut).
+  team chemistry `team_combo`, integritas roadmap versi/channel/office).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
@@ -66,6 +70,13 @@ Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), f
 4. ✅ **Hiring channels berbiaya** (mulut/koran/internet/TV/headhunter) — §3.2 *(selesai)*
 5. ✅ **Combo talent×tim** (team chemistry "Seadanya"→"Luar Biasa", DNA Kairosoft) — §9 P1+ *(selesai)*
 6. **Balancing playtest** (boost chance, rush incident, proposal effort, biaya channel, tier combo, runway pacing) — butuh feedback playtest user
+
+## P2 — Content & Art (BARU MULAI)
+- ✅ Kantor visual tumbuh otomatis (tier Garasi→Menara) + badge peran + banner aktivitas + audio cue.
+- ⏳ Animasi karakter lebih kaya (jalan ke meja, ekspresi saat boost/insiden), ikon fitur per layanan.
+- ⏳ Integrasi pixel art final (MENUNGGU ASET dari user — Claude pakai CC0/placeholder).
+- ⏳ Layar/efek rilis & funding, SFX tambahan.
+- Catatan: pembuatan art & audio ASLI = ranah user (CLAUDE.md §7). Sistem siap menerima aset final.
 
 ## Catatan balance (perlu playtest)
 - Stamina drain/recover, pacing minggu, biaya/revenue, threshold review — semua di `data/*.json`, gampang di-tweak.

@@ -20,9 +20,11 @@ func _recompose() -> void:
 		return
 	var specs: Array = []
 	for t in _game.talents:
-		specs.append({ "type": _game.role_color_type(t) })
-	var cap: int = maxi(12, _game.talents.size())
-	_tex = ImageTexture.create_from_image(OfficeRenderer.compose(specs, 0, _char_img, _frame, cap))
+		specs.append({ "type": _game.role_badge_type(t) })
+	# Tingkat kantor tumbuh dari ukuran tim (Garasi→Menara) — visual P2.
+	var tier: int = _game.office_tier()
+	var cap: int = maxi(_game.office_capacity(), _game.talents.size())
+	_tex = ImageTexture.create_from_image(OfficeRenderer.compose(specs, tier, _char_img, _frame, cap))
 	_fit_camera()
 	queue_redraw()
 
@@ -49,5 +51,9 @@ func _draw() -> void:
 		return
 	var sz := _tex.get_size()
 	draw_texture(_tex, -sz * 0.5)
-	draw_string(ThemeDB.fallback_font, Vector2(-sz.x * 0.5 + 4, -sz.y * 0.5 - 5),
-		"🏢 Kantor BeJek", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.9))
+	var top := -sz.y * 0.5
+	draw_string(ThemeDB.fallback_font, Vector2(-sz.x * 0.5 + 4, top - 18),
+		"🏢 Kantor BeJek — %s (%d/%d)" % [_game.office_tier_name(), _game.talents.size(), _game.office_capacity()],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.92))
+	draw_string(ThemeDB.fallback_font, Vector2(-sz.x * 0.5 + 4, top - 5),
+		_game.activity_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.8, 0.92, 1.0, 0.92))

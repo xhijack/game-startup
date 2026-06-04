@@ -34,6 +34,7 @@ var _bj: Dictionary = {}
 var _accum: float = 0.0
 var _idc: int = 0
 var _channels: Array = []      # channel rekrut (recruit_channels.json)
+var _office_levels: Array = [] # tingkat kantor (office.json) — visual P2
 
 const ROLE_SKILL := {
 	"Product": "product", "Developer": "coding", "Designer": "ui_ux",
@@ -95,6 +96,8 @@ func start_new() -> void:
 	# unit cash = ribuan Rp, jadi 1 = Rp 1.000).
 	var f := _make("Kamu (Founder)", { "product": 4, "coding": 3 }, 1)
 	talents.append(f)
+	# Tingkat kantor (visual P2): tumbuh otomatis dari ukuran tim.
+	_office_levels = (DataLoader.load_json("office.json").get("levels", []) as Array).duplicate()
 	# Channel rekrut (§3.2). Batch awal gratis lewat "mulut ke mulut".
 	_channels = (DataLoader.load_json("recruit_channels.json").get("channels", []) as Array).duplicate()
 	candidates.clear()
@@ -510,3 +513,43 @@ func role_color_type(t: Talent) -> String:
 			mx = v
 			best = pair[1]
 	return best
+
+## Skill dominan (untuk warna badge 5-peran di kantor) — P2 visualisasi.
+func role_badge_type(t: Talent) -> String:
+	var best := "coding"
+	var mx := -1
+	for key in ["product", "coding", "ui_ux", "qa", "management"]:
+		var v: int = t.get(key)
+		if v > mx:
+			mx = v
+			best = key
+	return best
+
+# --- Kantor (P2): tingkat ruangan tumbuh otomatis seiring ukuran tim ---
+
+## Tingkat kantor 0..3 (Garasi→Menara) dari ukuran tim vs kapasitas tiap level.
+func office_tier() -> int:
+	for i in _office_levels.size():
+		if talents.size() <= int(_office_levels[i].get("capacity", 9999)):
+			return i
+	return maxi(0, _office_levels.size() - 1)
+
+func office_tier_name() -> String:
+	var t := office_tier()
+	return str(_office_levels[t].get("name", "")) if t < _office_levels.size() else ""
+
+func office_capacity() -> int:
+	var t := office_tier()
+	return int(_office_levels[t].get("capacity", 12)) if t < _office_levels.size() else 12
+
+## Ringkasan aktivitas kantor untuk banner in-world.
+func activity_text() -> String:
+	if proposing:
+		return "📝 Proposal %s — %d%%" % [next_version_label(), int(proposal_pct() * 100)]
+	if active != null:
+		if active.is_done():
+			return "✅ %s siap rilis (%d%%)" % [active.label, int(active.score() * 100)]
+		return "🛠 %s — %s" % [active.label, active.phase_label()]
+	if can_propose():
+		return "Backlog habis — siap bikin proposal"
+	return "Menunggu arahan Bos…"

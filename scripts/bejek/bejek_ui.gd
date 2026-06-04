@@ -242,7 +242,13 @@ func _skills(t: Talent) -> String:
 func _on_notify(msg: String) -> void:
 	if _secretary:
 		_secretary.text = msg
-	Audio.play("confirm")
+	# Sound cue sesuai jenis notifikasi (P2 audio polish).
+	if msg.begins_with("⚠️") or msg.begins_with("💥"):
+		Audio.play("error")
+	elif msg.begins_with("📰") or msg.begins_with("🎯") or msg.begins_with("🚀"):
+		Audio.jingle("jingle_event")
+	else:
+		Audio.play("confirm")
 
 func _on_game_over(reason: String) -> void:
 	_overlay_label.text = "💀 GAME OVER\n%s" % reason
