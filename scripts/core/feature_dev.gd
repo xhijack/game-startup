@@ -134,14 +134,20 @@ func mode_label() -> String:
 
 ## Skor rilis 0..1 dari 4 dimensi (dinormalisasi ke ukuran fitur) − penalti bug.
 func score() -> float:
-	var scale := maxf(1.0, dev_req)
-	var cre := clampf(dims.creativity / (scale * 0.6), 0.0, 1.0)
-	var ux := clampf(dims.ui_ux / (scale * 0.6), 0.0, 1.0)
-	var sec := security_ratio()
-	var dev := clampf(dims.development / scale, 0.0, 1.0)
-	var q := (cre + ux + sec + dev) / 4.0
-	var bug_pen := clampf(bugs_found / (scale * 0.3), 0.0, 1.0) * 0.4
+	var r := dim_ratios()
+	var q: float = (r.creativity + r.ui_ux + r.security + r.development) / 4.0
+	var bug_pen := clampf(bugs_found / (maxf(1.0, dev_req) * 0.3), 0.0, 1.0) * 0.4
 	return clampf(q - bug_pen, 0.0, 1.0)
+
+## Rasio tiap dimensi 0..1 (untuk reveal rilis & skor). Kunci: creativity/ui_ux/security/development.
+func dim_ratios() -> Dictionary:
+	var scale := maxf(1.0, dev_req)
+	return {
+		"creativity": clampf(dims.creativity / (scale * 0.6), 0.0, 1.0),
+		"ui_ux": clampf(dims.ui_ux / (scale * 0.6), 0.0, 1.0),
+		"security": security_ratio(),
+		"development": clampf(dims.development / scale, 0.0, 1.0),
+	}
 
 ## Progres Development 0..1 — syarat tawaran boost & ambang rilis cepat.
 func dev_progress() -> float:

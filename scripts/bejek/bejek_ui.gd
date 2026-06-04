@@ -11,6 +11,9 @@ var _chan_box: VBoxContainer
 var _cand_box: VBoxContainer
 var _overlay: Control
 var _overlay_label: Label
+var _review_overlay: Control
+var _review_box: VBoxContainer
+var _prev_speed: int = 0
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -19,12 +22,14 @@ func _ready() -> void:
 	_build_hud()
 	_build_secretary()
 	_build_panel()
+	_build_review_overlay()
 	_build_overlay()
 	if _game:
 		_game.changed.connect(_refresh)
 		_game.notify.connect(_on_notify)
 		_game.game_over.connect(_on_game_over)
 		_game.game_won.connect(_on_game_won)
+		_game.feature_released.connect(_show_review)
 	_refresh()
 
 func _build_hud() -> void:
@@ -251,15 +256,82 @@ func _on_notify(msg: String) -> void:
 		Audio.play("confirm")
 
 func _on_game_over(reason: String) -> void:
+	_review_overlay.visible = false
 	_overlay_label.text = "💀 GAME OVER\n%s" % reason
 	_overlay.visible = true
 	Audio.play("error")
 
 func _on_game_won(u: int) -> void:
+	_review_overlay.visible = false
 	_overlay_label.text = "🎉 %s SUKSES!\nSemua versi dirilis · %s user · %s" % [
 		_game.current_version_label(), _grp(u), _money(_game.economy.cash)]
 	_overlay.visible = true
 	Audio.jingle("jingle_win")
+
+# --- Reveal rilis (P2): layar skor review animasi ala Game Dev Story ---
+
+func _build_review_overlay() -> void:
+	_review_overlay = Control.new()
+	_review_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_review_overlay.visible = false
+	add_child(_review_overlay)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.66)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_review_overlay.add_child(dim)
+	var cc := CenterContainer.new()
+	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_review_overlay.add_child(cc)
+	var pan := PanelContainer.new()
+	cc.add_child(pan)
+	_review_box = VBoxContainer.new()
+	_review_box.custom_minimum_size = Vector2(380, 0)
+	_review_box.add_theme_constant_override("separation", 7)
+	pan.add_child(_review_box)
+
+func _show_review(info: Dictionary) -> void:
+	for c in _review_box.get_children():
+		c.queue_free()
+	# Jeda saat reveal; speed dipulihkan saat pemain klik Lanjut.
+	_prev_speed = _game.speed
+	_game.set_speed(0)
+	var title := "🚀 RILIS: %s%s" % [str(info.get("label", "")), "  ⚡cepat" if info.get("rushed", false) else ""]
+	var tl := _lbl(_review_box, title)
+	tl.add_theme_font_size_override("font_size", 19)
+	# Bar per dimensi, diisi via tween.
+	var ratios: Dictionary = info.get("ratios", {})
+	var bars: Array = []
+	for d in [["creativity", "Creativity"], ["ui_ux", "UI/UX"], ["security", "Security"], ["development", "Development"]]:
+		var row := HBoxContainer.new()
+		_review_box.add_child(row)
+		var nl := _lbl(row, d[1])
+		nl.custom_minimum_size = Vector2(100, 0)
+		var pb := ProgressBar.new()
+		pb.custom_minimum_size = Vector2(220, 14)
+		pb.max_value = 1.0
+		pb.value = 0.0
+		pb.show_percentage = false
+		row.add_child(pb)
+		bars.append([pb, float(ratios.get(d[0], 0.0))])
+	_review_box.add_child(HSeparator.new())
+	var review: int = int(info.get("review", 0))
+	var scl := _lbl(_review_box, "⭐ Review: 0 / 40")
+	scl.add_theme_font_size_override("font_size", 22)
+	scl.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	_lbl(_review_box, "Verdict: %s" % str(info.get("verdict", "")))
+	_lbl(_review_box, "👥 +%s user" % _grp(int(info.get("gained", 0))))
+	var lost := int(info.get("incident_lost", 0))
+	if lost > 0:
+		var il := _lbl(_review_box, "⚠️ Insiden: -%s user kabur (Security tipis)" % _grp(lost))
+		il.add_theme_color_override("font_color", Color(1, 0.4, 0.35))
+	_btn(_review_box, "Lanjut ▶", func(): _review_overlay.visible = false; _game.set_speed(_prev_speed))
+	_review_overlay.visible = true
+	# Animasi: bar terisi + skor menghitung naik.
+	var tw := create_tween()
+	tw.set_parallel(true)
+	for b in bars:
+		tw.tween_property(b[0], "value", float(b[1]), 0.6).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_method(func(v: float): scl.text = "⭐ Review: %d / 40" % int(round(v)), 0.0, float(review), 0.7)
 
 func _build_overlay() -> void:
 	_overlay = Control.new()

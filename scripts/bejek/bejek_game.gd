@@ -6,6 +6,7 @@ signal changed()
 signal notify(msg: String)
 signal game_over(reason: String)
 signal game_won(users: int)
+signal feature_released(info: Dictionary)   # reveal rilis (P2): rincian skor & dampak
 
 var economy: Economy
 var talents: Array = []        # Array[Talent]
@@ -377,8 +378,15 @@ func release() -> bool:
 	released.append({ "label": active.label, "score": sc, "review": review })
 	var tag := " ⚡(cepat)" if rushed else ""
 	emit_signal("notify", "📰 %s%s — Review %d/40 → %s +%s user" % [active.label, tag, review, _review_verdict(review), _group(gained)])
+	var incident_lost := 0
 	if rushed:
-		_resolve_incident(active)
+		incident_lost = _resolve_incident(active)
+	# Reveal rilis (P2): kirim rincian ke UI untuk layar skor.
+	emit_signal("feature_released", {
+		"label": active.label, "review": review, "score": sc, "verdict": _review_verdict(review),
+		"gained": gained, "rushed": rushed, "incident_lost": incident_lost,
+		"ratios": active.dim_ratios(),
+	})
 	active = null
 	assigned.clear()
 	emit_signal("changed")
@@ -396,19 +404,21 @@ func release() -> bool:
 
 ## Risiko insiden rilis cepat (§6.2): makin tipis Security & makin banyak bug, makin
 ## besar peluang akun diretas / data bocor / server down → user kabur massal.
-func _resolve_incident(feat) -> void:
+## Mengembalikan jumlah user yang kabur (0 bila tak ada insiden).
+func _resolve_incident(feat) -> int:
 	var rc: Dictionary = _bj.get("rush", {})
 	var gap := 1.0 - feat.security_ratio()
 	var chance := clampf(
 		gap * float(rc.get("incident_per_security_gap", 0.6)) + feat.bugs * float(rc.get("incident_per_bug", 0.02)),
 		0.0, float(rc.get("incident_max", 0.9)))
 	if randf() >= chance:
-		return
+		return 0
 	var lost := int(round(users * float(rc.get("incident_user_loss_pct", 0.3))))
 	users = maxi(0, users - lost)
 	var fine := float(rc.get("incident_fine", 0.0))
 	economy.cash -= fine
 	emit_signal("notify", "⚠️ INSIDEN! %s kebobolan — %s user kabur. Akibat rilis kecepetan tanpa Security." % [feat.label, _group(lost)])
+	return lost
 
 func _review_mult(r: int) -> float:
 	if r >= int(_bj.get("review_viral_at", 34)): return float(_bj.get("review_mult_viral", 1.8))

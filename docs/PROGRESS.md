@@ -57,9 +57,9 @@ Desain: `docs/BeJek_CoreSystems.md`.
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**~82 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
-  (termasuk rilis-cepat `can_release`/`security_ratio`, boost `boost_success_chance`/`resolve_boost`,
-  team chemistry `team_combo`, integritas roadmap versi/channel/office).
+- `tests/verify_core.gd` (**~84 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+  (termasuk rilis-cepat `can_release`/`security_ratio`, boost, team chemistry `team_combo`,
+  `dim_ratios`, integritas roadmap versi/channel/office).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
@@ -73,6 +73,9 @@ Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), f
 
 ## P2 — Content & Art (BARU MULAI)
 - ✅ Kantor visual tumbuh otomatis (tier Garasi→Menara) + badge peran + banner aktivitas + audio cue.
+- ✅ **Reveal rilis** ala Game Dev Story: layar skor animasi (4 bar dimensi terisi + Review /40
+  menghitung naik + verdict + user gain + insiden), jeda saat reveal lalu lanjut. Sinyal
+  `feature_released` + `FeatureProject.dim_ratios()`.
 - ⏳ Animasi karakter lebih kaya (jalan ke meja, ekspresi saat boost/insiden), ikon fitur per layanan.
 - ⏳ Integrasi pixel art final (MENUNGGU ASET dari user — Claude pakai CC0/placeholder).
 - ⏳ Layar/efek rilis & funding, SFX tambahan.

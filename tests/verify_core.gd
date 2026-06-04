@@ -195,6 +195,13 @@ func _initialize() -> void:
 	fc.apply_week([Talent.new({ "product": 10, "stamina": 100 })], fcfg, 1.2)
 	_almost(fc.dims.creativity, 12.0, 0.01, "combo_scales_output")
 
+	# --- BeJek: dim_ratios (reveal rilis P2) konsisten dgn normalisasi skor ---
+	var fdr := FeatureProject.new({ "id": "dr", "dev": 50 })
+	fdr.dims.development = 50.0  # = dev_req → ratio penuh
+	_almost(float(fdr.dim_ratios().development), 1.0, 0.001, "dim_ratio_development_full")
+	fdr.dims.creativity = 15.0   # scale*0.6 = 30 → 0.5
+	_almost(float(fdr.dim_ratios().creativity), 0.5, 0.001, "dim_ratio_creativity_half")
+
 	# --- BeJek: Rilis cepat (§6.2) — Development wajib penuh, sisanya konsekuensi ---
 	var fr := FeatureProject.new({ "id": "r", "dev": 50 })
 	_ok(not fr.can_release(), "rush_blocked_when_dev_empty")
