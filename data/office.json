@@ -1,0 +1,9 @@
+{
+  "_note": "Tingkat kantor. capacity = maks karyawan (meja). upgrade_cost (k) dibayar untuk pindah ke tingkat berikut saat butuh ruang lebih. Tingkat juga mengubah tampilan ruangan (Garasi→Menara).",
+  "levels": [
+    { "name": "Garasi",  "capacity": 4,  "upgrade_cost": 0 },
+    { "name": "Ruko",    "capacity": 8,  "upgrade_cost": 40000 },
+    { "name": "Kantor",  "capacity": 16, "upgrade_cost": 150000 },
+    { "name": "Menara",  "capacity": 30, "upgrade_cost": 600000 }
+  ]
+}

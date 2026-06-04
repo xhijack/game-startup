@@ -1,0 +1,9 @@
+{
+  "_note": "Definisi tipe talent + rentang stat dasar. P0 pakai 3 tipe.",
+  "names": ["Andi", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gita", "Hadi", "Indah", "Joko", "Kirana", "Lutfi"],
+  "types": {
+    "engineer":  { "label_id": "Engineer",  "label_en": "Engineer",  "base_skill": [3, 7], "base_speed": [3, 7], "base_salary": [1200, 3500] },
+    "designer":  { "label_id": "Designer",  "label_en": "Designer",  "base_skill": [3, 6], "base_speed": [3, 6], "base_salary": [1000, 3000] },
+    "marketing": { "label_id": "Marketing", "label_en": "Marketing", "base_skill": [2, 7], "base_speed": [2, 6], "base_salary": [1000, 3000] }
+  }
+}

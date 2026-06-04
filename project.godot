@@ -1,0 +1,27 @@
+; Engine configuration — Startup Story (Godot 4.x)
+; Dihasilkan untuk P0 prototype. Lihat CLAUDE.md.
+
+config_version=5
+
+[application]
+
+config/name="Startup Story"
+config/description="Game tycoon manajemen startup teknologi Indonesia (isometric pixel art)."
+run/main_scene="res://scenes/main/menu.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+GameState="*res://scripts/game_state.gd"
+Audio="*res://scripts/audio/audio.gd"
+
+[display]
+
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0

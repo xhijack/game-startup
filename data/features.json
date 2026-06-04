@@ -1,0 +1,9 @@
+{
+  "_note": "Fitur R&D ride-hailing (sistem kombinasi). requires.types = kombinasi tipe talent yang HARUS ada di tim (DNA Kairosoft). min_team_skill = total skill tim. cost sekali bayar (k). effect permanen: quality_delta, capacity_add, revenue_take_delta, acquisition_add.",
+  "features": [
+    { "id": "surge_pricing", "label": "Surge Pricing", "desc": "Engineer → margin naik saat jam sibuk", "requires": { "types": ["engineer"], "min_team_skill": 5 }, "cost": 15000, "effect": { "revenue_take_delta": 0.03 } },
+    { "id": "referral", "label": "Program Referral", "desc": "Engineer + Marketing → user ajak user", "requires": { "types": ["engineer", "marketing"], "min_team_skill": 8 }, "cost": 25000, "effect": { "acquisition_add": 10 } },
+    { "id": "driver_ux", "label": "Revamp UX Driver", "desc": "Engineer + Designer → kualitas layanan naik", "requires": { "types": ["engineer", "designer"], "min_team_skill": 10 }, "cost": 30000, "effect": { "quality_delta": 0.12 } },
+    { "id": "fleet_scale", "label": "Ekspansi Armada", "desc": "Tim lengkap → kapasitas harian naik", "requires": { "types": ["engineer", "designer", "marketing"], "min_team_skill": 15 }, "cost": 60000, "effect": { "capacity_add": 1500 } }
+  ]
+}

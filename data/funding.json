@@ -1,0 +1,10 @@
+{
+  "_note": "Funding rounds (urut). amount/valuation dalam satuan 'k'. value_per_mau dipakai untuk hitung valuation = MAU * value_per_mau. Round terakhir is_ipo=true => win condition.",
+  "value_per_mau": 50,
+  "rounds": [
+    { "id": "seed",     "label": "Seed",     "require_mau": 1500,  "amount": 150000,  "dilution": 0.15 },
+    { "id": "series_a", "label": "Series A", "require_mau": 5000,  "amount": 750000,  "dilution": 0.18 },
+    { "id": "series_b", "label": "Series B", "require_mau": 12000, "amount": 3000000, "dilution": 0.15 },
+    { "id": "ipo",      "label": "IPO",      "require_mau": 25000, "require_valuation": 1000000, "amount": 0, "dilution": 0.0, "is_ipo": true }
+  ]
+}

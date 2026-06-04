@@ -1,0 +1,19 @@
+# Godot 4
+.godot/
+.import/
+export_presets.cfg
+
+# OS
+.DS_Store
+
+# Build output
+*.translation
+android/build/
+build/
+*.apk
+*.aab
+
+# Tooling cruft
+.claude-flow/
+.claude/
+claude-flow.config.json

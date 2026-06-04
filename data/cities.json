@@ -1,0 +1,10 @@
+{
+  "_note": "Ekspansi geografis. Kota 'home' terbuka gratis sejak awal. Buka kota baru: bayar open_cost sekali + tambah ops_cost_monthly bulanan, dapat acquisition_bonus (jangkauan pasar lebih luas). unlock_mau = gate progresi.",
+  "cities": [
+    { "id": "bandung",  "label": "Bandung",  "home": true, "open_cost": 0,     "ops_cost_monthly": 0,    "acquisition_bonus": 0,  "unlock_mau": 0 },
+    { "id": "jakarta",  "label": "Jakarta",  "open_cost": 40000, "ops_cost_monthly": 5000, "acquisition_bonus": 25, "unlock_mau": 3000 },
+    { "id": "surabaya", "label": "Surabaya", "open_cost": 30000, "ops_cost_monthly": 4000, "acquisition_bonus": 18, "unlock_mau": 8000 },
+    { "id": "medan",    "label": "Medan",    "open_cost": 25000, "ops_cost_monthly": 3500, "acquisition_bonus": 15, "unlock_mau": 15000 },
+    { "id": "makassar", "label": "Makassar", "open_cost": 20000, "ops_cost_monthly": 3000, "acquisition_bonus": 12, "unlock_mau": 22000 }
+  ]
+}

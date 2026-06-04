@@ -1,0 +1,23 @@
+{
+  "_note": "Definisi layanan. fare & ops dalam satuan 'k'. ride_hailing aktif sejak awal; sisanya di-LAUNCH (bayar rnd_cost) setelah MAU capai unlock_mau. Semua layanan aktif memonetisasi basis MAU yang sama (visi super-app).",
+  "ride_hailing": {
+    "label_id": "Ride-Hailing", "label_en": "Ride-Hailing",
+    "rnd_cost": 0, "ops_cost_monthly": 4000, "capacity": 2500,
+    "base_quality": 0.6, "fare": 12, "take_rate": 0.1, "unlock_mau": 0
+  },
+  "food_delivery": {
+    "label_id": "Food Delivery", "label_en": "Food Delivery",
+    "rnd_cost": 8000, "ops_cost_monthly": 3000, "capacity": 1500,
+    "base_quality": 0.55, "fare": 25, "take_rate": 0.18, "unlock_mau": 5000
+  },
+  "payment": {
+    "label_id": "Dompet Digital", "label_en": "Digital Wallet",
+    "rnd_cost": 25000, "ops_cost_monthly": 6000, "capacity": 10000,
+    "base_quality": 0.6, "fare": 50, "take_rate": 0.02, "unlock_mau": 12000
+  },
+  "logistics": {
+    "label_id": "Logistics / Kurir", "label_en": "Logistics",
+    "rnd_cost": 50000, "ops_cost_monthly": 10000, "capacity": 4000,
+    "base_quality": 0.55, "fare": 35, "take_rate": 0.15, "unlock_mau": 20000
+  }
+}

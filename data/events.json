@@ -1,0 +1,16 @@
+{
+  "_note": "Event acak/musiman. monthly_chance = peluang event muncul tiap pergantian bulan. months[] kosong = bisa muncul kapan saja; isi = hanya bulan itu (musiman). Efek: mau_pct, cash_delta(k), quality_delta, lose_talent, demand_pct+duration_days.",
+  "monthly_chance": 0.5,
+  "events": [
+    { "id": "viral",        "type": "positive", "label_id": "Kampanye viral tembus FYP",      "effect": { "mau_pct": 0.25 } },
+    { "id": "grant",        "type": "positive", "label_id": "Menang hibah kompetisi startup", "effect": { "cash_delta": 20000 } },
+    { "id": "feature_hit",  "type": "positive", "label_id": "Fitur baru disukai user",        "effect": { "quality_delta": 0.08 } },
+    { "id": "server_down",  "type": "negative", "label_id": "Server down berjam-jam",         "effect": { "quality_delta": -0.10 } },
+    { "id": "comp_promo",   "type": "negative", "label_id": "Kompetitor bakar promo agresif", "effect": { "mau_pct": -0.12 } },
+    { "id": "talent_quit",  "type": "negative", "label_id": "Talent kunci resign",            "effect": { "lose_talent": 1 } },
+    { "id": "regulation",   "type": "negative", "label_id": "Regulasi baru, biaya melonjak",  "effect": { "cash_delta": -15000 } },
+    { "id": "ramadan",      "type": "seasonal", "label_id": "Lonjakan demand Ramadhan",  "months": [4],          "effect": { "demand_pct": 0.30, "duration_days": 30 } },
+    { "id": "rainy",        "type": "seasonal", "label_id": "Musim hujan, order turun",  "months": [11, 12, 1],  "effect": { "demand_pct": -0.15, "duration_days": 30 } },
+    { "id": "school",       "type": "seasonal", "label_id": "Tahun ajaran baru",        "months": [7],          "effect": { "demand_pct": 0.15, "duration_days": 30 } }
+  ]
+}
