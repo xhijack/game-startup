@@ -7,6 +7,7 @@ signal notify(msg: String)
 signal game_over(reason: String)
 signal game_won(users: int)
 signal feature_released(info: Dictionary)   # reveal rilis (P2): rincian skor & dampak
+signal worker_react(idx: int, emoji: String) # bubble in-world (P2) di atas pekerja ke-idx
 
 var economy: Economy
 var talents: Array = []        # Array[Talent]
@@ -23,6 +24,7 @@ var running: bool = false
 var won: bool = false
 var boost_pending: bool = false   # tawaran boost §6.4 menunggu keputusan pemain
 var _boost_chance: float = 0.0
+var _boost_proposer_idx: int = -1  # index pekerja pengusul boost (untuk bubble)
 var versions: Array = []          # manifest versi (bejek_versions.json)
 var version_idx: int = 0          # versi yang sedang terbuka
 var proposing: bool = false       # sedang menggarap proposal versi berikutnya (§5)
@@ -130,11 +132,17 @@ func _advance_week() -> void:
 	elif active != null and not active.is_done():
 		working = true
 		var prev := active.phase
+		var prev_found: float = active.bugs_found
 		active.apply_week(assigned, _fcfg, team_combo_mult())
 		if active.phase != prev:
 			emit_signal("notify", "%s → fase %s" % [active.label, active.phase_label()])
 			if active.is_done():
 				emit_signal("notify", "%s SIAP DIRILIS (skor %d%%) — klik Rilis!" % [active.label, int(active.score() * 100)])
+		# QA menemukan bug minggu ini → bubble 🐞 di atas QA.
+		if prev == FeatureProject.QA and active.bugs_found > prev_found + 0.5:
+			var qi := _first_assigned_index_with("qa")
+			if qi >= 0:
+				emit_signal("worker_react", qi, "🐞")
 		_maybe_offer_boost()
 		pskill = _phase_skill()
 	# Stamina: hanya yang BENAR-BENAR berkontribusi di fase ini (skill relevan > 0)
@@ -151,6 +159,7 @@ func _advance_week() -> void:
 			t.stamina = clampf(t.stamina + rec, 0.0, 100.0)
 		if before > tired and t.stamina <= tired:
 			emit_signal("notify", "%s kelelahan 😴 — istirahatkan (Tarik) biar pulih!" % t.person_name)
+			emit_signal("worker_react", talents.find(t), "😴")
 	# Ekonomi & waktu mingguan: user organik dari fitur rilis, kas (revenue − burn),
 	# maju 1 minggu, lalu cek runway (kas < 0 = kalah).
 	users += int(round(_released_score_sum() * float(_bj.get("organic_per_score", 40.0))))
@@ -289,8 +298,11 @@ func _maybe_offer_boost() -> void:
 	active.boost_offered = true
 	boost_pending = true
 	_boost_chance = active.boost_success_chance(assigned, bcfg)
+	_boost_proposer_idx = _first_assigned_index_with("coding")
 	emit_signal("notify", "💡 %s nawarin terobosan buat %s — peluang sukses %d%%. Ambil risikonya?" % [
 		_boost_proposer(), active.label, int(_boost_chance * 100)])
+	if _boost_proposer_idx >= 0:
+		emit_signal("worker_react", _boost_proposer_idx, "💡")
 	emit_signal("changed")
 
 func boost_chance() -> float:
@@ -301,6 +313,16 @@ func _boost_proposer() -> String:
 		if t.coding > 0:
 			return t.person_name
 	return "Tim"
+
+## Index talent (di office layout) dgn skill tertinggi yang ditugaskan; -1 bila tak ada.
+func _first_assigned_index_with(skill: String) -> int:
+	var best := -1
+	var bestv := 0
+	for t in assigned:
+		if int(t.get(skill)) > bestv:
+			bestv = int(t.get(skill))
+			best = talents.find(t)
+	return best
 
 func accept_boost() -> void:
 	if not boost_pending or active == null:
@@ -314,6 +336,8 @@ func accept_boost() -> void:
 		emit_signal("notify", "🚀 Terobosan BERHASIL! Development %s melonjak." % active.label)
 	else:
 		emit_signal("notify", "💥 Terobosan GAGAL — bug menumpuk di %s. (QA bakal sibuk)" % active.label)
+	if _boost_proposer_idx >= 0:
+		emit_signal("worker_react", _boost_proposer_idx, "🚀" if success else "💥")
 	emit_signal("changed")
 
 func decline_boost() -> void:
