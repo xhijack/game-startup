@@ -178,6 +178,23 @@ func _initialize() -> void:
 	feat2.apply_week([Talent.new({ "product": 10, "stamina": 100 }), Talent.new({ "management": 4, "stamina": 100 })], fcfg)
 	_almost(feat2.dims.creativity, 12.0, 0.01, "feat_management_boost")
 
+	# --- BeJek: team chemistry / combo (§9 P1+) ---
+	var ccfg2 := { "combos": { "tiers": [
+		{ "min_diversity": 0, "label": "Seadanya", "mult": 1.0 },
+		{ "min_diversity": 2, "label": "Cukup", "mult": 1.05 },
+		{ "min_diversity": 3, "label": "Bagus", "mult": 1.2 },
+	] } }
+	var solo := [Talent.new({ "coding": 5, "stamina": 100 })]
+	_eq(FeatureProject.team_combo(solo, ccfg2).diversity, 1, "combo_diversity_solo")
+	_almost(float(FeatureProject.team_combo(solo, ccfg2).mult), 1.0, 0.001, "combo_solo_neutral")
+	var mixed := [Talent.new({ "product": 4, "coding": 3, "stamina": 100 }), Talent.new({ "ui_ux": 5, "stamina": 100 })]
+	_eq(FeatureProject.team_combo(mixed, ccfg2).diversity, 3, "combo_diversity_mixed")
+	_almost(float(FeatureProject.team_combo(mixed, ccfg2).mult), 1.2, 0.001, "combo_picks_highest_tier")
+	# Combo multiplier menskalakan output apply_week (fase PRD → creativity).
+	var fc := FeatureProject.new({ "id": "c", "dev": 50 })
+	fc.apply_week([Talent.new({ "product": 10, "stamina": 100 })], fcfg, 1.2)
+	_almost(fc.dims.creativity, 12.0, 0.01, "combo_scales_output")
+
 	# --- BeJek: Rilis cepat (§6.2) — Development wajib penuh, sisanya konsekuensi ---
 	var fr := FeatureProject.new({ "id": "r", "dev": 50 })
 	_ok(not fr.can_release(), "rush_blocked_when_dev_empty")

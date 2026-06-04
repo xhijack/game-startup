@@ -33,6 +33,11 @@ Desain: `docs/BeJek_CoreSystems.md`.
 - **Hiring channels (§3.2):** rekrut lewat pasang iklan berbiaya (`data/recruit_channels.json`):
   mulut-ke-mulut (gratis) · koran · internet · TV (peluang bintang) · headhunter (mahal,
   pasti tinggi). Tiap channel beda cost/jumlah/kualitas + peluang talent bintang.
+  Role bisa direkrut: Product · Developer · Designer · QA · **Manajer**.
+- **Team chemistry / combo (§9 P1+, DNA Kairosoft):** komposisi tim makin lengkap
+  (skill product/coding/ui_ux/qa/management beragam) → tier chemistry naik
+  (Seadanya→Cukup→Bagus→Mantap→Luar Biasa) → **multiplier output fitur & proposal**.
+  Mendorong rekrut beragam. Tiers di `data/balance.json` (`feature_dev.combos`).
 - Modal awal **Rp 200 jt**. Founder digaji Rp 1.000.
 - Aset CC0 (Kenney) untuk kantor + karakter, audio CC0.
 
@@ -48,9 +53,9 @@ Desain: `docs/BeJek_CoreSystems.md`.
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**86 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+- `tests/verify_core.gd` (**~85 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
   (termasuk rilis-cepat `can_release`/`security_ratio`, boost `boost_success_chance`/`resolve_boost`,
-  integritas roadmap versi `bejek_versions.json`, & channel rekrut `recruit_channels.json`).
+  team chemistry `team_combo`, integritas roadmap versi `bejek_versions.json`, & channel rekrut).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
@@ -59,8 +64,8 @@ Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), f
 2. ✅ **Rush-release** (rilis cepat → cepat tapi skor turun + insiden) — §6.2 *(selesai)*
 3. ✅ **Proposal / versi v2+** (buka fitur lanjutan) — §5 *(selesai)*
 4. ✅ **Hiring channels berbiaya** (mulut/koran/internet/TV/headhunter) — §3.2 *(selesai)*
-5. Balancing playtest (boost chance, rush incident, proposal effort, biaya channel, runway pacing)
-6. Combo talent×proyek ("Not good"→"Amazing", DNA Kairosoft) — §9 P1+
+5. ✅ **Combo talent×tim** (team chemistry "Seadanya"→"Luar Biasa", DNA Kairosoft) — §9 P1+ *(selesai)*
+6. **Balancing playtest** (boost chance, rush incident, proposal effort, biaya channel, tier combo, runway pacing) — butuh feedback playtest user
 
 ## Catatan balance (perlu playtest)
 - Stamina drain/recover, pacing minggu, biaya/revenue, threshold review — semua di `data/*.json`, gampang di-tweak.

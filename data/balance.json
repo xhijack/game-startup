@@ -55,6 +55,16 @@
       "max_success": 0.9,
       "success_gain": 0.5,
       "fail_bugs": 0.6
+    },
+    "combos": {
+      "_note": "Team chemistry / combo ala Game Dev Story (§9 P1+, DNA Kairosoft). diversity = jumlah skill berbeda yang dimiliki tim (product/coding/ui_ux/qa/management, skill>0). Tim makin lengkap → multiplier output fitur makin tinggi. Mendorong rekrut beragam lewat hiring channels. Tier dipilih dari min_diversity tertinggi yang terpenuhi.",
+      "tiers": [
+        { "min_diversity": 0, "label": "Seadanya",      "mult": 1.0 },
+        { "min_diversity": 2, "label": "Cukup",         "mult": 1.05 },
+        { "min_diversity": 3, "label": "Bagus 👍",      "mult": 1.12 },
+        { "min_diversity": 4, "label": "Mantap 🔥",     "mult": 1.22 },
+        { "min_diversity": 5, "label": "Luar Biasa ✨", "mult": 1.35 }
+      ]
     }
   },
   "bejek": {

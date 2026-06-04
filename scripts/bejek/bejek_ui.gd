@@ -198,6 +198,10 @@ func _refresh_pool() -> void:
 func _refresh_team() -> void:
 	for c in _team_box.get_children():
 		c.queue_free()
+	# Team chemistry / combo (§9 P1+): tim makin lengkap → output fitur naik.
+	var combo: Dictionary = _game.team_combo_info()
+	var cl := _lbl(_team_box, "🧪 Chemistry: %s ×%.2f" % [str(combo.label), float(combo.mult)])
+	cl.add_theme_color_override("font_color", Color(0.6, 0.9, 1))
 	for t in _game.talents:
 		var tired := " 😴" if t.stamina <= 30 else ""
 		_lbl(_team_box, "• %s · %s · ⚡%d%%%s · %s/bln" % [

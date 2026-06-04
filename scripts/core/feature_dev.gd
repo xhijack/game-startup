@@ -45,10 +45,11 @@ func _prd_req() -> float: return dev_req * 0.4
 func _qa_req() -> float: return dev_req * 0.35
 
 ## Satu minggu kerja dari `talents` yang ditugaskan. cfg = balance.feature_dev.
-func apply_week(talents: Array, cfg: Dictionary) -> void:
+## combo = multiplier chemistry tim (lihat team_combo); 1.0 = netral.
+func apply_week(talents: Array, cfg: Dictionary, combo: float = 1.0) -> void:
 	if phase == DONE or phase == RELEASED:
 		return
-	var coef := float(cfg.get("point_coef", 1.0))
+	var coef := float(cfg.get("point_coef", 1.0)) * combo
 	var mgmt := 1.0 + _mgmt_bonus(talents, cfg)
 	# Multiplier mode fokus (cepat-vs-matang).
 	var mode: Dictionary = (cfg.get("modes", {}) as Dictionary).get(focus_mode, {})
@@ -97,6 +98,24 @@ func _sum(talents: Array, key: String) -> float:
 	for t in talents:
 		s += t.get(key) * t.stamina_factor()
 	return s
+
+## Team chemistry / combo (§9 P1+, DNA Kairosoft). Makin beragam skill yang dimiliki
+## tim (product/coding/ui_ux/qa/management), makin tinggi multiplier output fitur.
+## Mengembalikan { "label": String, "mult": float, "diversity": int }. cfg = feature_dev.
+static func team_combo(team: Array, cfg: Dictionary) -> Dictionary:
+	const SKILLS := ["product", "coding", "ui_ux", "qa", "management"]
+	var diversity := 0
+	for key in SKILLS:
+		for t in team:
+			if int(t.get(key)) > 0:
+				diversity += 1
+				break
+	var tiers: Array = (cfg.get("combos", {}) as Dictionary).get("tiers", [])
+	var best := { "label": "Seadanya", "mult": 1.0, "diversity": diversity }
+	for tier in tiers:
+		if diversity >= int(tier.get("min_diversity", 0)):
+			best = { "label": str(tier.get("label", "—")), "mult": float(tier.get("mult", 1.0)), "diversity": diversity }
+	return best
 
 func _mgmt_bonus(talents: Array, cfg: Dictionary) -> float:
 	var m := 0

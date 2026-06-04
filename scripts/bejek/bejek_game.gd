@@ -126,7 +126,7 @@ func _advance_week() -> void:
 	elif active != null and not active.is_done():
 		working = true
 		var prev := active.phase
-		active.apply_week(assigned, _fcfg)
+		active.apply_week(assigned, _fcfg, team_combo_mult())
 		if active.phase != prev:
 			emit_signal("notify", "%s → fase %s" % [active.label, active.phase_label()])
 			if active.is_done():
@@ -248,9 +248,9 @@ func start_proposal() -> bool:
 	emit_signal("changed")
 	return true
 
-## Satu minggu kerja proposal: PM mengakumulasi product point (di-boost Management).
+## Satu minggu kerja proposal: PM mengakumulasi product point (di-boost Management & combo).
 func _advance_proposal() -> void:
-	var coef := float(_fcfg.get("point_coef", 1.0))
+	var coef := float(_fcfg.get("point_coef", 1.0)) * team_combo_mult()
 	var mgmt := 1.0
 	var P := 0.0
 	for t in assigned:
@@ -336,6 +336,17 @@ func toggle_assign(t: Talent) -> void:
 
 func is_assigned(t: Talent) -> bool:
 	return assigned.has(t)
+
+# --- Team chemistry / combo (§9 P1+) — dihitung dari komposisi seluruh tim ---
+
+func team_combo_info() -> Dictionary:
+	return FeatureProject.team_combo(talents, _fcfg)
+
+func team_combo_mult() -> float:
+	return float(team_combo_info().mult)
+
+func team_combo_label() -> String:
+	return str(team_combo_info().label)
 
 ## Skill yang dibutuhkan fase aktif (petunjuk untuk pemain).
 func phase_need() -> String:
@@ -465,7 +476,7 @@ func _run_channel(ch: Dictionary) -> void:
 		candidates.append(_gen_candidate(ch))
 
 func _gen_candidate(ch: Dictionary) -> Talent:
-	const ROLES := ["Product", "Developer", "Designer", "QA"]
+	const ROLES := ["Product", "Developer", "Designer", "QA", "Manajer"]
 	var role: String = ROLES[randi() % ROLES.size()]
 	var key: String = ROLE_SKILL.get(role, "coding")
 	var lr: Array = ch.get("level", [4, 8])
