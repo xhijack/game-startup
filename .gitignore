@@ -17,3 +17,9 @@ build/
 .claude-flow/
 .claude/
 claude-flow.config.json
+
+# Tooling DB (ruflo)
+ruvector.db
+*.db
+*.db-shm
+*.db-wal
