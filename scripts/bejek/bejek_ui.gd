@@ -133,17 +133,15 @@ func _refresh_active() -> void:
 		var b := _btn(_active_box, "🚀 RILIS (skor %d%%)" % int(a.score() * 100), func(): _game.release())
 		b.add_theme_color_override("font_color", Color(0.4, 1, 0.5))
 	else:
-		# Roster: tugaskan / tarik employee dari fitur ini.
+		# Roster: tugaskan / tarik employee dari fitur ini (tombol full-width).
 		_lbl(_active_box, "Tugaskan tim:")
 		for t in _game.talents:
-			var row := HBoxContainer.new()
-			_active_box.add_child(row)
 			var on: bool = _game.is_assigned(t)
 			var tired := " 😴" if t.stamina <= 30 else ""
-			var lbl := _lbl(row, "  %s %s ⚡%d%%%s" % ["✅" if on else "⬜", t.person_name, int(t.stamina), tired])
-			lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			var ct: Talent = t
-			_btn(row, "Tarik" if on else "Tugaskan", func(): _game.toggle_assign(ct))
+			_btn(_active_box, "%s %s ⚡%d%%%s — %s" % [
+				"✅" if on else "⬜", t.person_name, int(t.stamina), tired,
+				"Tarik" if on else "Tugaskan"], func(): _game.toggle_assign(ct))
 
 func _refresh_pool() -> void:
 	for c in _pool_box.get_children():
@@ -152,12 +150,9 @@ func _refresh_pool() -> void:
 		_lbl(_pool_box, "(selesaikan fitur aktif dulu)")
 		return
 	for fd in _game.pool:
-		var row := HBoxContainer.new()
-		_pool_box.add_child(row)
-		var lbl := _lbl(row, "%s (%d)" % [str(fd.get("label", "")), int(fd.get("dev", 50))])
-		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var cf: Dictionary = fd
-		_btn(row, "Develop", func(): _game.develop(cf))
+		_btn(_pool_box, "▶ Develop: %s (%d)" % [str(fd.get("label", "")), int(fd.get("dev", 50))],
+			func(): _game.develop(cf))
 
 func _refresh_team() -> void:
 	for c in _team_box.get_children():
@@ -171,16 +166,9 @@ func _refresh_cand() -> void:
 	for c in _cand_box.get_children():
 		c.queue_free()
 	for cand in _game.candidates:
-		var box := VBoxContainer.new()
-		box.add_theme_constant_override("separation", 1)
-		_cand_box.add_child(box)
-		_lbl(box, "%s · %s · %s" % [cand.person_name, cand.type, _skills(cand)])
-		var row := HBoxContainer.new()
-		box.add_child(row)
-		var sl := _lbl(row, "   %s/bln" % _money(cand.salary_monthly))
-		sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_lbl(_cand_box, "%s · %s · %s · %s/bln" % [cand.person_name, cand.type, _skills(cand), _money(cand.salary_monthly)])
 		var c2: Talent = cand
-		_btn(row, "Hire", func(): _game.hire(c2))
+		_btn(_cand_box, "✚ Hire %s" % cand.person_name, func(): _game.hire(c2))
 
 ## Skill non-nol ringkas, mis. "Prod 7 · Code 3".
 func _skills(t: Talent) -> String:
