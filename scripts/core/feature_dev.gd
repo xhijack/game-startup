@@ -19,6 +19,7 @@ const PHASE_LABEL := {
 
 var id: String = ""
 var label: String = ""
+var icon: String = "🔧"        # emoji identitas fitur (data/bejek_v*.json)
 var phase: String = PRD
 var dims: Dictionary = { "creativity": 0.0, "ui_ux": 0.0, "security": 0.0, "development": 0.0 }
 var bugs: float = 0.0          # bug belum diperbaiki
@@ -39,6 +40,7 @@ func _init(d: Dictionary = {}) -> void:
 		return
 	id = str(d.get("id", ""))
 	label = str(d.get("label", id))
+	icon = str(d.get("icon", "🔧"))
 	dev_req = float(d.get("dev_req", d.get("dev", 50.0)))
 
 func _prd_req() -> float: return dev_req * 0.4

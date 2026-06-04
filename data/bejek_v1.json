@@ -1,12 +1,12 @@
 {
-  "_note": "Fitur BeJek v1 (Ojek Manual / MVP). Tiap fitur: kebutuhan komponen dev/ui_ux/security (starting point). Diisi point dari skill tim tiap minggu. Lihat docs/BeJek_CoreSystems.md §6-7.",
+  "_note": "Fitur BeJek v1 (Ojek Manual / MVP). Tiap fitur: kebutuhan komponen dev/ui_ux/security (starting point) + icon (emoji identitas). Diisi point dari skill tim tiap minggu. Lihat docs/BeJek_CoreSystems.md §6-7.",
   "version": "BeJek v1 — Ojek Manual",
   "features": [
-    { "id": "form_pesan",   "label": "Form Pesan Ojek",     "dev": 50, "ui_ux": 30, "security": 20 },
-    { "id": "dispatch",     "label": "Dispatch Manual",      "dev": 60, "ui_ux": 20, "security": 15 },
-    { "id": "tarif",        "label": "Kalkulasi Tarif",      "dev": 40, "ui_ux": 10, "security": 10 },
-    { "id": "bayar_tunai",  "label": "Pembayaran Tunai",     "dev": 30, "ui_ux": 15, "security": 25 },
-    { "id": "daftar_order", "label": "Daftar Order Masuk",   "dev": 35, "ui_ux": 25, "security": 10 },
-    { "id": "konfirmasi",   "label": "Konfirmasi Order Selesai", "dev": 25, "ui_ux": 15, "security": 10 }
+    { "id": "form_pesan",   "label": "Form Pesan Ojek",          "icon": "📝", "dev": 50, "ui_ux": 30, "security": 20 },
+    { "id": "dispatch",     "label": "Dispatch Manual",          "icon": "🧭", "dev": 60, "ui_ux": 20, "security": 15 },
+    { "id": "tarif",        "label": "Kalkulasi Tarif",          "icon": "💵", "dev": 40, "ui_ux": 10, "security": 10 },
+    { "id": "bayar_tunai",  "label": "Pembayaran Tunai",         "icon": "💰", "dev": 30, "ui_ux": 15, "security": 25 },
+    { "id": "daftar_order", "label": "Daftar Order Masuk",       "icon": "📋", "dev": 35, "ui_ux": 25, "security": 10 },
+    { "id": "konfirmasi",   "label": "Konfirmasi Order Selesai", "icon": "✅", "dev": 25, "ui_ux": 15, "security": 10 }
   ]
 }

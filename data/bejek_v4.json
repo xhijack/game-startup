@@ -1,11 +1,11 @@
 {
-  "_note": "Fitur BeJek v4 (Ekspansi Layanan / Super-app). Format: starting point dev/ui_ux/security. Lihat docs/BeJek_CoreSystems.md §7. Angka = balancing; fitur besar (BeJekPay butuh Security tinggi).",
+  "_note": "Fitur BeJek v4 (Ekspansi Layanan / Super-app). Format: starting point dev/ui_ux/security + icon. Lihat docs/BeJek_CoreSystems.md §7. Angka = balancing; fitur besar (BeJekPay butuh Security tinggi).",
   "version": "BeJek v4 — Ekspansi Layanan",
   "features": [
-    { "id": "bejek_food",  "label": "BeJek Food",         "dev": 110, "ui_ux": 60, "security": 50 },
-    { "id": "bejek_pay",   "label": "BeJekPay (Dompet)",  "dev": 120, "ui_ux": 55, "security": 80 },
-    { "id": "bejek_kirim", "label": "BeJek Kirim",        "dev": 100, "ui_ux": 50, "security": 45 },
-    { "id": "topup_saldo", "label": "Top-up & Saldo",     "dev": 70,  "ui_ux": 40, "security": 60 },
-    { "id": "split_pay",   "label": "Split Payment",      "dev": 80,  "ui_ux": 45, "security": 70 }
+    { "id": "bejek_food",  "label": "BeJek Food",         "icon": "🍔", "dev": 110, "ui_ux": 60, "security": 50 },
+    { "id": "bejek_pay",   "label": "BeJekPay (Dompet)",  "icon": "💳", "dev": 120, "ui_ux": 55, "security": 80 },
+    { "id": "bejek_kirim", "label": "BeJek Kirim",        "icon": "📦", "dev": 100, "ui_ux": 50, "security": 45 },
+    { "id": "topup_saldo", "label": "Top-up & Saldo",     "icon": "🔋", "dev": 70,  "ui_ux": 40, "security": 60 },
+    { "id": "split_pay",   "label": "Split Payment",      "icon": "➗", "dev": 80,  "ui_ux": 45, "security": 70 }
   ]
 }

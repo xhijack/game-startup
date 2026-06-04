@@ -1,12 +1,12 @@
 {
-  "_note": "Fitur BeJek v2 (Otomasi & Driver). Format tiap fitur: starting point komponen dev/ui_ux/security. Lihat docs/BeJek_CoreSystems.md §7. Angka = balancing, tweak bebas.",
+  "_note": "Fitur BeJek v2 (Otomasi & Driver). Format tiap fitur: starting point komponen dev/ui_ux/security + icon. Lihat docs/BeJek_CoreSystems.md §7. Angka = balancing, tweak bebas.",
   "version": "BeJek v2 — Otomasi & Driver",
   "features": [
-    { "id": "app_driver",    "label": "Aplikasi Sisi Driver",      "dev": 70, "ui_ux": 40, "security": 30 },
-    { "id": "peta_gps",      "label": "Peta & GPS",                 "dev": 80, "ui_ux": 45, "security": 25 },
-    { "id": "auto_match",    "label": "Auto-matching Driver",       "dev": 90, "ui_ux": 30, "security": 35 },
-    { "id": "estimasi_auto", "label": "Estimasi Tarif & Jarak",     "dev": 55, "ui_ux": 25, "security": 20 },
-    { "id": "rating_driver", "label": "Rating & Review Driver",     "dev": 45, "ui_ux": 40, "security": 20 },
-    { "id": "riwayat_order", "label": "Riwayat Order",              "dev": 40, "ui_ux": 30, "security": 15 }
+    { "id": "app_driver",    "label": "Aplikasi Sisi Driver",      "icon": "🛵", "dev": 70, "ui_ux": 40, "security": 30 },
+    { "id": "peta_gps",      "label": "Peta & GPS",                 "icon": "🗺️", "dev": 80, "ui_ux": 45, "security": 25 },
+    { "id": "auto_match",    "label": "Auto-matching Driver",       "icon": "🔗", "dev": 90, "ui_ux": 30, "security": 35 },
+    { "id": "estimasi_auto", "label": "Estimasi Tarif & Jarak",     "icon": "📐", "dev": 55, "ui_ux": 25, "security": 20 },
+    { "id": "rating_driver", "label": "Rating & Review Driver",     "icon": "⭐", "dev": 45, "ui_ux": 40, "security": 20 },
+    { "id": "riwayat_order", "label": "Riwayat Order",              "icon": "🕘", "dev": 40, "ui_ux": 30, "security": 15 }
   ]
 }

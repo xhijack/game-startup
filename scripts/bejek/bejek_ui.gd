@@ -136,7 +136,7 @@ func _refresh_active() -> void:
 		else:
 			_lbl(_active_box, "(belum ada — pilih dari backlog)")
 		return
-	_lbl(_active_box, "%s — fase: %s" % [a.label, a.phase_label()])
+	_lbl(_active_box, "%s %s — fase: %s" % [a.icon, a.label, a.phase_label()])
 	if not a.is_done():
 		var hint := _lbl(_active_box, "   → butuh: %s" % _game.phase_need())
 		hint.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
@@ -198,7 +198,7 @@ func _refresh_pool() -> void:
 		return
 	for fd in _game.pool:
 		var cf: Dictionary = fd
-		_btn(_pool_box, "▶ Develop: %s (%d)" % [str(fd.get("label", "")), int(fd.get("dev", 50))],
+		_btn(_pool_box, "▶ %s %s (%d)" % [str(fd.get("icon", "🔧")), str(fd.get("label", "")), int(fd.get("dev", 50))],
 			func(): _game.develop(cf))
 	# Proposal versi lanjutan (§5) — muncul saat backlog versi ini habis.
 	if _game.can_propose():
@@ -329,7 +329,7 @@ func _show_review(info: Dictionary) -> void:
 	# Jeda saat reveal; speed dipulihkan saat pemain klik Lanjut.
 	_prev_speed = _game.speed
 	_game.set_speed(0)
-	var title := "🚀 RILIS: %s%s" % [str(info.get("label", "")), "  ⚡cepat" if info.get("rushed", false) else ""]
+	var title := "🚀 RILIS: %s %s%s" % [str(info.get("icon", "")), str(info.get("label", "")), "  ⚡cepat" if info.get("rushed", false) else ""]
 	var tl := _lbl(_review_box, title)
 	tl.add_theme_font_size_override("font_size", 19)
 	# Bar per dimensi, diisi via tween.

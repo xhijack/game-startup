@@ -57,9 +57,9 @@ Desain: `docs/BeJek_CoreSystems.md`.
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**~86 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+- `tests/verify_core.gd` (**~88 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
   (termasuk rilis-cepat `can_release`/`security_ratio`, boost, team chemistry `team_combo`,
-  `dim_ratios`, integritas roadmap versi/channel/office/milestone).
+  `dim_ratios`, ikon fitur, integritas roadmap versi/channel/office/milestone).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
@@ -80,7 +80,9 @@ Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), f
   💡 nawarin boost · 🚀/💥 hasil boost), naik & memudar. Sinyal `worker_react` + `OfficeRenderer.head_pos()`.
 - ✅ **Toast tonggak pertumbuhan**: perayaan saat user tembus angka bulat (1rb→1jt, data
   `bejek.milestones`) — fade in/out + jingle. Sinyal `milestone`.
-- ⏳ Ikon fitur per layanan, animasi karakter lebih kaya (jalan ke meja), overlay funding-style.
+- ✅ **Ikon per fitur**: tiap fitur layanan punya emoji identitas (data `bejek_v*.json` field
+  `icon`) — tampil di backlog, panel aktif, banner kantor, & reveal rilis.
+- ⏳ Animasi karakter lebih kaya (jalan ke meja), overlay funding-style, misi/quest ringan.
 - ⏳ Integrasi pixel art final (MENUNGGU ASET dari user — Claude pakai CC0/placeholder).
 - ⏳ Layar/efek rilis & funding, SFX tambahan.
 - Catatan: pembuatan art & audio ASLI = ranah user (CLAUDE.md §7). Sistem siap menerima aset final.

@@ -414,7 +414,7 @@ func release() -> bool:
 		incident_lost = _resolve_incident(active)
 	# Reveal rilis (P2): kirim rincian ke UI untuk layar skor.
 	emit_signal("feature_released", {
-		"label": active.label, "review": review, "score": sc, "verdict": _review_verdict(review),
+		"label": active.label, "icon": active.icon, "review": review, "score": sc, "verdict": _review_verdict(review),
 		"gained": gained, "rushed": rushed, "incident_lost": incident_lost,
 		"ratios": active.dim_ratios(),
 	})
@@ -599,8 +599,8 @@ func activity_text() -> String:
 		return "📝 Proposal %s — %d%%" % [next_version_label(), int(proposal_pct() * 100)]
 	if active != null:
 		if active.is_done():
-			return "✅ %s siap rilis (%d%%)" % [active.label, int(active.score() * 100)]
-		return "🛠 %s — %s" % [active.label, active.phase_label()]
+			return "✅ %s %s siap rilis (%d%%)" % [active.icon, active.label, int(active.score() * 100)]
+		return "🛠 %s %s — %s" % [active.icon, active.label, active.phase_label()]
 	if can_propose():
 		return "Backlog habis — siap bikin proposal"
 	return "Menunggu arahan Bos…"

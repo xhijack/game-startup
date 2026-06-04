@@ -231,6 +231,13 @@ func _initialize() -> void:
 	for v in vman:
 		var feats_v: Array = DataLoader.load_json(str(v.get("file", ""))).get("features", [])
 		_ok(feats_v.size() > 0, "version_%s_has_features" % str(v.get("id", "?")))
+		var all_icons := true
+		for fe in feats_v:
+			if str(fe.get("icon", "")) == "":
+				all_icons = false
+		_ok(all_icons, "version_%s_features_have_icon" % str(v.get("id", "?")))
+	# FeatureProject menyimpan icon dari definisi.
+	_eq(FeatureProject.new({ "id": "z", "icon": "🍔", "dev": 50 }).icon, "🍔", "feature_stores_icon")
 
 	# --- BeJek: channel rekrut (§3.2) — manifest valid, ada opsi gratis ---
 	var chans: Array = DataLoader.load_json("recruit_channels.json").get("channels", [])
