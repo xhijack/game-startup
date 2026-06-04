@@ -14,6 +14,9 @@ var _overlay_label: Label
 var _review_overlay: Control
 var _review_box: VBoxContainer
 var _prev_speed: int = 0
+var _toast: PanelContainer
+var _toast_label: Label
+var _toast_tween: Tween
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -23,6 +26,7 @@ func _ready() -> void:
 	_build_secretary()
 	_build_panel()
 	_build_review_overlay()
+	_build_toast()
 	_build_overlay()
 	if _game:
 		_game.changed.connect(_refresh)
@@ -30,6 +34,7 @@ func _ready() -> void:
 		_game.game_over.connect(_on_game_over)
 		_game.game_won.connect(_on_game_won)
 		_game.feature_released.connect(_show_review)
+		_game.milestone.connect(_show_milestone)
 	_refresh()
 
 func _build_hud() -> void:
@@ -248,12 +253,41 @@ func _on_notify(msg: String) -> void:
 	if _secretary:
 		_secretary.text = msg
 	# Sound cue sesuai jenis notifikasi (P2 audio polish).
-	if msg.begins_with("⚠️") or msg.begins_with("💥"):
+	if msg.begins_with("🏆"):
+		pass  # tonggak: audio ditangani _show_milestone (jingle_win)
+	elif msg.begins_with("⚠️") or msg.begins_with("💥"):
 		Audio.play("error")
 	elif msg.begins_with("📰") or msg.begins_with("🎯") or msg.begins_with("🚀"):
 		Audio.jingle("jingle_event")
 	else:
 		Audio.play("confirm")
+
+# --- Toast tonggak pertumbuhan user (P2) ---
+
+func _build_toast() -> void:
+	_toast = PanelContainer.new()
+	_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_toast.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_toast.offset_top = 64
+	_toast.visible = false
+	add_child(_toast)
+	_toast_label = Label.new()
+	_toast_label.add_theme_font_size_override("font_size", 20)
+	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast.add_child(_toast_label)
+
+func _show_milestone(info: Dictionary) -> void:
+	_toast_label.text = "🏆 %s" % str(info.get("label", ""))
+	_toast.visible = true
+	_toast.modulate = Color(1, 1, 1, 0)
+	Audio.jingle("jingle_win")
+	if _toast_tween and _toast_tween.is_valid():
+		_toast_tween.kill()
+	_toast_tween = create_tween()
+	_toast_tween.tween_property(_toast, "modulate:a", 1.0, 0.3)
+	_toast_tween.tween_interval(2.4)
+	_toast_tween.tween_property(_toast, "modulate:a", 0.0, 0.7)
+	_toast_tween.tween_callback(func(): _toast.visible = false)
 
 func _on_game_over(reason: String) -> void:
 	_review_overlay.visible = false

@@ -8,6 +8,7 @@ signal game_over(reason: String)
 signal game_won(users: int)
 signal feature_released(info: Dictionary)   # reveal rilis (P2): rincian skor & dampak
 signal worker_react(idx: int, emoji: String) # bubble in-world (P2) di atas pekerja ke-idx
+signal milestone(info: Dictionary)           # tonggak pertumbuhan user (P2)
 
 var economy: Economy
 var talents: Array = []        # Array[Talent]
@@ -38,6 +39,8 @@ var _accum: float = 0.0
 var _idc: int = 0
 var _channels: Array = []      # channel rekrut (recruit_channels.json)
 var _office_levels: Array = [] # tingkat kantor (office.json) — visual P2
+var _milestones: Array = []    # tonggak user (balance.bejek.milestones) — P2
+var _milestones_hit: Dictionary = {}
 
 const ROLE_SKILL := {
 	"Product": "product", "Developer": "coding", "Designer": "ui_ux",
@@ -101,6 +104,9 @@ func start_new() -> void:
 	talents.append(f)
 	# Tingkat kantor (visual P2): tumbuh otomatis dari ukuran tim.
 	_office_levels = (DataLoader.load_json("office.json").get("levels", []) as Array).duplicate()
+	# Tonggak pertumbuhan user (P2): perayaan saat menembus angka bulat.
+	_milestones = (_bj.get("milestones", []) as Array).duplicate()
+	_milestones_hit.clear()
 	# Channel rekrut (§3.2). Batch awal gratis lewat "mulut ke mulut".
 	_channels = (DataLoader.load_json("recruit_channels.json").get("channels", []) as Array).duplicate()
 	candidates.clear()
@@ -168,6 +174,7 @@ func _advance_week() -> void:
 	if week > int(_bj.get("weeks_per_year", 52)):
 		week = 1
 		year += 1
+	_check_milestones()
 	emit_signal("changed")
 	if economy.cash < 0.0:
 		running = false
@@ -413,6 +420,7 @@ func release() -> bool:
 	})
 	active = null
 	assigned.clear()
+	_check_milestones()
 	emit_signal("changed")
 	# Backlog versi ini habis: menang bila versi terakhir, atau buka proposal versi lanjut.
 	if pool.is_empty() and not won:
@@ -425,6 +433,15 @@ func release() -> bool:
 			speed = 0
 			emit_signal("game_won", users)
 	return true
+
+## Tonggak pertumbuhan user (P2): rayakan saat menembus angka bulat (sekali tiap tonggak).
+func _check_milestones() -> void:
+	for m in _milestones:
+		var thr := int(m.get("users", 0))
+		if users >= thr and not _milestones_hit.has(thr):
+			_milestones_hit[thr] = true
+			emit_signal("milestone", m)
+			emit_signal("notify", "🏆 %s" % str(m.get("label", "")))
 
 ## Risiko insiden rilis cepat (§6.2): makin tipis Security & makin banyak bug, makin
 ## besar peluang akun diretas / data bocor / server down → user kabur massal.

@@ -257,5 +257,16 @@ func _initialize() -> void:
 		prev_cap = cap2
 	_ok(caps_ok, "office_capacity_ascending")
 
+	# --- BeJek: tonggak user (P2) — ambang menaik & berlabel ---
+	var miles: Array = DataLoader.load_json("balance.json").get("bejek", {}).get("milestones", [])
+	_ok(miles.size() >= 1, "milestones_loaded")
+	var prev_u := -1
+	var miles_ok := true
+	for m in miles:
+		if int(m.get("users", 0)) <= prev_u or str(m.get("label", "")) == "":
+			miles_ok = false
+		prev_u = int(m.get("users", 0))
+	_ok(miles_ok, "milestones_ascending_labeled")
+
 	print("[VERIFY] PASS=%d FAIL=%d" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
