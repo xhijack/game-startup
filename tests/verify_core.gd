@@ -200,5 +200,13 @@ func _initialize() -> void:
 	fb2.resolve_boost(false, bcfg)
 	_almost(fb2.bugs, 30.0, 0.001, "boost_fail_adds_bugs")
 
+	# --- BeJek: roadmap versi (§5) — manifest valid & tiap versi punya file fitur ---
+	var vman: Array = DataLoader.load_json("bejek_versions.json").get("versions", [])
+	_ok(vman.size() >= 1, "versions_manifest_loaded")
+	_eq(float(vman[0].get("proposal_effort", -1.0)), 0.0, "version_v1_is_tutorial")
+	for v in vman:
+		var feats_v: Array = DataLoader.load_json(str(v.get("file", ""))).get("features", [])
+		_ok(feats_v.size() > 0, "version_%s_has_features" % str(v.get("id", "?")))
+
 	print("[VERIFY] PASS=%d FAIL=%d" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)

@@ -22,6 +22,11 @@ var running: bool = false
 var won: bool = false
 var boost_pending: bool = false   # tawaran boost §6.4 menunggu keputusan pemain
 var _boost_chance: float = 0.0
+var versions: Array = []          # manifest versi (bejek_versions.json)
+var version_idx: int = 0          # versi yang sedang terbuka
+var proposing: bool = false       # sedang menggarap proposal versi berikutnya (§5)
+var _proposal_progress: float = 0.0
+var _proposal_req: float = 0.0
 
 var _bal: Dictionary = {}
 var _fcfg: Dictionary = {}
@@ -67,7 +72,12 @@ func start_new() -> void:
 	talents.clear()
 	candidates.clear()
 	released.clear()
-	pool = (DataLoader.load_json("bejek_v1.json").get("features", []) as Array).duplicate()
+	# Roadmap versi (§5). v1 langsung terbuka (tutorial); v2+ butuh proposal.
+	versions = (DataLoader.load_json("bejek_versions.json").get("versions", []) as Array).duplicate()
+	if versions.is_empty():
+		versions = [{ "id": "v1", "label": "BeJek v1", "file": "bejek_v1.json", "proposal_effort": 0 }]
+	version_idx = 0
+	pool = (DataLoader.load_json(str(versions[0].get("file", "bejek_v1.json"))).get("features", []) as Array).duplicate()
 	active = null
 	assigned.clear()
 	users = 0
@@ -77,6 +87,9 @@ func start_new() -> void:
 	running = true
 	won = false
 	boost_pending = false
+	proposing = false
+	_proposal_progress = 0.0
+	_proposal_req = 0.0
 	# Founder: Product + sedikit coding. Gaji Rp 1000 (founder kerja "gratis";
 	# unit cash = ribuan Rp, jadi 1 = Rp 1.000).
 	var f := _make("Kamu (Founder)", { "product": 4, "coding": 3 }, 1)
@@ -99,8 +112,14 @@ func _process(dt: float) -> void:
 		_advance_week()
 
 func _advance_week() -> void:
-	var working := active != null and not active.is_done()
-	if working:
+	var working := false
+	var pskill := ""
+	if proposing:
+		working = true
+		pskill = "product"
+		_advance_proposal()
+	elif active != null and not active.is_done():
+		working = true
 		var prev := active.phase
 		active.apply_week(assigned, _fcfg)
 		if active.phase != prev:
@@ -108,12 +127,12 @@ func _advance_week() -> void:
 			if active.is_done():
 				emit_signal("notify", "%s SIAP DIRILIS (skor %d%%) — klik Rilis!" % [active.label, int(active.score() * 100)])
 		_maybe_offer_boost()
+		pskill = _phase_skill()
 	# Stamina: hanya yang BENAR-BENAR berkontribusi di fase ini (skill relevan > 0)
 	# yang capek; sisanya (termasuk yang skill-nya tak dipakai fase ini) ikut pulih.
 	var drain := float(_bj.get("stamina_drain", 9.0))
 	var rec := float(_bj.get("stamina_recover", 18.0))
 	var tired := float(_bj.get("tired_threshold", 30.0))
-	var pskill := _phase_skill()
 	for t in talents:
 		var before: float = t.stamina
 		var contributing: bool = working and assigned.has(t) and pskill != "" and int(t.get(pskill)) > 0
@@ -183,6 +202,67 @@ func develop(def: Dictionary) -> bool:
 	emit_signal("notify", "Mulai develop: %s (fase PRD — tugaskan Product!)" % active.label)
 	emit_signal("changed")
 	return true
+
+# --- Proposal / versi v2+ (§5) ---
+
+## Versi yang sedang terbuka.
+func current_version_label() -> String:
+	if versions.is_empty():
+		return ""
+	return str(versions[version_idx].get("label", ""))
+
+## Ada versi berikutnya yang belum terbuka?
+func has_next_version() -> bool:
+	return version_idx < versions.size() - 1
+
+func next_version_label() -> String:
+	if not has_next_version():
+		return ""
+	return str(versions[version_idx + 1].get("label", ""))
+
+## Boleh mulai proposal versi berikutnya: tak ada fitur aktif, backlog versi ini
+## sudah habis (semua dirilis), dan masih ada versi lanjutan.
+func can_propose() -> bool:
+	return not proposing and active == null and pool.is_empty() and has_next_version()
+
+## Progres proposal 0..1 (untuk progress bar UI).
+func proposal_pct() -> float:
+	if _proposal_req <= 0.0:
+		return 0.0
+	return clampf(_proposal_progress / _proposal_req, 0.0, 1.0)
+
+func start_proposal() -> bool:
+	if not can_propose():
+		return false
+	proposing = true
+	_proposal_progress = 0.0
+	_proposal_req = float(versions[version_idx + 1].get("proposal_effort", 50.0))
+	assigned = talents.duplicate()
+	boost_pending = false
+	emit_signal("notify", "📝 Bikin proposal %s — tugaskan Product (PM)! Akumulasi visi sampai matang." % next_version_label())
+	emit_signal("changed")
+	return true
+
+## Satu minggu kerja proposal: PM mengakumulasi product point (di-boost Management).
+func _advance_proposal() -> void:
+	var coef := float(_fcfg.get("point_coef", 1.0))
+	var mgmt := 1.0
+	var P := 0.0
+	for t in assigned:
+		P += t.product * t.stamina_factor()
+		mgmt += t.management * float(_fcfg.get("management_bonus_per_skill", 0.05))
+	_proposal_progress += P * coef * mgmt
+	if _proposal_progress >= _proposal_req:
+		_unlock_next_version()
+
+func _unlock_next_version() -> void:
+	proposing = false
+	version_idx += 1
+	var v: Dictionary = versions[version_idx]
+	pool = (DataLoader.load_json(str(v.get("file", ""))).get("features", []) as Array).duplicate()
+	emit_signal("notify", "🎯 Proposal kelar! %s terbuka — %d fitur baru di backlog. Gas develop!" % [
+		str(v.get("label", "")), pool.size()])
+	emit_signal("changed")
 
 # --- Boost: judi opt-in saat Development (§6.4) ---
 
@@ -283,12 +363,16 @@ func release() -> bool:
 	active = null
 	assigned.clear()
 	emit_signal("changed")
-	# Menang: seluruh fitur BeJek v1 dirilis.
+	# Backlog versi ini habis: menang bila versi terakhir, atau buka proposal versi lanjut.
 	if pool.is_empty() and not won:
-		won = true
-		running = false
-		speed = 0
-		emit_signal("game_won", users)
+		if has_next_version():
+			emit_signal("notify", "🎉 Semua fitur %s dirilis! Buat proposal %s untuk lanjut." % [
+				current_version_label(), next_version_label()])
+		else:
+			won = true
+			running = false
+			speed = 0
+			emit_signal("game_won", users)
 	return true
 
 ## Risiko insiden rilis cepat (§6.2): makin tipis Security & makin banyak bug, makin

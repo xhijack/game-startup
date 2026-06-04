@@ -26,6 +26,10 @@ Desain: `docs/BeJek_CoreSystems.md`.
   skor lebih rendah + **risiko insiden** (Security tipis/bug → user kabur massal).
 - **Boost / terobosan (§6.4):** judi opt-in saat Development — peluang sukses dari
   skill coding tim; sukses → lonjakan Dev, gagal → bug menumpuk.
+- **Proposal & versi v2+ (§5):** roadmap multi-versi (`data/bejek_versions.json` →
+  v1 Ojek Manual → v2 Otomasi → v3 Retensi → v4 Super-app). v1 = tutorial (langsung
+  terbuka); backlog versi habis → PM bikin **proposal** (akumulasi product point) →
+  versi berikutnya & fitur barunya terbuka. **Menang = semua fitur v4 dirilis.**
 - Modal awal **Rp 200 jt**. Founder digaji Rp 1.000.
 - Aset CC0 (Kenney) untuk kantor + karakter, audio CC0.
 
@@ -33,23 +37,25 @@ Desain: `docs/BeJek_CoreSystems.md`.
 > cek runway/game-over) sempat jadi *dead code* di `_phase_skill()` → tidak pernah jalan.
 > Sudah dipindah ke `_advance_week()`; tension runway aktif lagi.
 
-**Data/balance:** `data/balance.json` (`feature_dev`, `bejek`), `data/bejek_v1.json` (6 fitur v1).
+**Data/balance:** `data/balance.json` (`feature_dev`, `bejek`), `data/bejek_versions.json`
+(roadmap 4 versi) + `data/bejek_v1..v4.json` (fitur tiap versi).
 
 ### ▶ Tycoon (lama — model awal, masih utuh)
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**68 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
-  (termasuk rilis-cepat `can_release`/`security_ratio` & boost `boost_success_chance`/`resolve_boost`).
+- `tests/verify_core.gd` (**74 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+  (termasuk rilis-cepat `can_release`/`security_ratio`, boost `boost_success_chance`/`resolve_boost`,
+  & integritas roadmap versi `bejek_versions.json`).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
 ## NEXT (urutan §9 BeJek)
 1. ✅ **Boost** opt-in (judi saat develop) — §6.4 *(selesai)*
 2. ✅ **Rush-release** (rilis cepat → cepat tapi skor turun + insiden) — §6.2 *(selesai)*
-3. **Proposal / versi v2+** (buka fitur lanjutan)
+3. ✅ **Proposal / versi v2+** (buka fitur lanjutan) — §5 *(selesai)*
 4. Hiring channels berbiaya (mulut-ke-mulut/koran/internet/TV/headhunter) — §3.2
-5. Balancing playtest (boost chance, rush incident, runway pacing)
+5. Balancing playtest (boost chance, rush incident, proposal effort, runway pacing)
 
 ## Catatan balance (perlu playtest)
 - Stamina drain/recover, pacing minggu, biaya/revenue, threshold review — semua di `data/*.json`, gampang di-tweak.

@@ -108,9 +108,21 @@ func _refresh() -> void:
 func _refresh_active() -> void:
 	for c in _active_box.get_children():
 		c.queue_free()
+	# Mode proposal versi (§5): PM mengakumulasi visi sebelum fitur baru terbuka.
+	if _game.proposing:
+		_lbl(_active_box, "📝 Proposal: %s" % _game.next_version_label())
+		var pl := _lbl(_active_box, "   Progres visi: %d%%" % int(_game.proposal_pct() * 100))
+		pl.add_theme_color_override("font_color", Color(0.5, 0.85, 1))
+		var ph := _lbl(_active_box, "   → butuh: Product (PM) merumuskan roadmap")
+		ph.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
+		_assign_roster()
+		return
 	var a = _game.active
 	if a == null:
-		_lbl(_active_box, "(belum ada — pilih dari backlog)")
+		if _game.can_propose():
+			_lbl(_active_box, "(backlog %s habis — buat proposal versi berikutnya ↓)" % _game.current_version_label())
+		else:
+			_lbl(_active_box, "(belum ada — pilih dari backlog)")
 		return
 	_lbl(_active_box, "%s — fase: %s" % [a.label, a.phase_label()])
 	if not a.is_done():
@@ -149,18 +161,26 @@ func _refresh_active() -> void:
 			var rb := _btn(_active_box, "⚡ Rilis Cepat (skor %d%% — berisiko)" % int(a.score() * 100), func(): _game.release())
 			rb.add_theme_color_override("font_color", Color(1, 0.6, 0.3))
 		# Roster: tugaskan / tarik employee dari fitur ini (tombol full-width).
-		_lbl(_active_box, "Tugaskan tim:")
-		for t in _game.talents:
-			var on: bool = _game.is_assigned(t)
-			var tired := " 😴" if t.stamina <= 30 else ""
-			var ct: Talent = t
-			_btn(_active_box, "%s %s ⚡%d%%%s — %s" % [
-				"✅" if on else "⬜", t.person_name, int(t.stamina), tired,
-				"Tarik" if on else "Tugaskan"], func(): _game.toggle_assign(ct))
+		_assign_roster()
+
+## Roster tugaskan/tarik tim — dipakai fase develop fitur & proposal versi.
+func _assign_roster() -> void:
+	_lbl(_active_box, "Tugaskan tim:")
+	for t in _game.talents:
+		var on: bool = _game.is_assigned(t)
+		var tired := " 😴" if t.stamina <= 30 else ""
+		var ct: Talent = t
+		_btn(_active_box, "%s %s ⚡%d%%%s — %s" % [
+			"✅" if on else "⬜", t.person_name, int(t.stamina), tired,
+			"Tarik" if on else "Tugaskan"], func(): _game.toggle_assign(ct))
 
 func _refresh_pool() -> void:
 	for c in _pool_box.get_children():
 		c.queue_free()
+	_lbl(_pool_box, "Versi aktif: %s" % _game.current_version_label())
+	if _game.proposing:
+		_lbl(_pool_box, "(proposal versi berikutnya sedang digarap…)")
+		return
 	if _game.active != null:
 		_lbl(_pool_box, "(selesaikan fitur aktif dulu)")
 		return
@@ -168,6 +188,10 @@ func _refresh_pool() -> void:
 		var cf: Dictionary = fd
 		_btn(_pool_box, "▶ Develop: %s (%d)" % [str(fd.get("label", "")), int(fd.get("dev", 50))],
 			func(): _game.develop(cf))
+	# Proposal versi lanjutan (§5) — muncul saat backlog versi ini habis.
+	if _game.can_propose():
+		var nb := _btn(_pool_box, "📝 Buat Proposal: %s" % _game.next_version_label(), func(): _game.start_proposal())
+		nb.add_theme_color_override("font_color", Color(0.5, 0.85, 1))
 
 func _refresh_team() -> void:
 	for c in _team_box.get_children():
@@ -205,8 +229,8 @@ func _on_game_over(reason: String) -> void:
 	Audio.play("error")
 
 func _on_game_won(u: int) -> void:
-	_overlay_label.text = "🎉 BeJek v1 SUKSES!\nSemua fitur dirilis · %s user · %s" % [
-		_grp(u), _money(_game.economy.cash)]
+	_overlay_label.text = "🎉 %s SUKSES!\nSemua versi dirilis · %s user · %s" % [
+		_game.current_version_label(), _grp(u), _money(_game.economy.cash)]
 	_overlay.visible = true
 	Audio.jingle("jingle_win")
 
