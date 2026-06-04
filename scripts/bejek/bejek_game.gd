@@ -20,6 +20,8 @@ var year: int = 1
 var speed: int = 0
 var running: bool = false
 var won: bool = false
+var boost_pending: bool = false   # tawaran boost §6.4 menunggu keputusan pemain
+var _boost_chance: float = 0.0
 
 var _bal: Dictionary = {}
 var _fcfg: Dictionary = {}
@@ -74,6 +76,7 @@ func start_new() -> void:
 	speed = 0
 	running = true
 	won = false
+	boost_pending = false
 	# Founder: Product + sedikit coding. Gaji Rp 1000 (founder kerja "gratis";
 	# unit cash = ribuan Rp, jadi 1 = Rp 1.000).
 	var f := _make("Kamu (Founder)", { "product": 4, "coding": 3 }, 1)
@@ -104,6 +107,7 @@ func _advance_week() -> void:
 			emit_signal("notify", "%s → fase %s" % [active.label, active.phase_label()])
 			if active.is_done():
 				emit_signal("notify", "%s SIAP DIRILIS (skor %d%%) — klik Rilis!" % [active.label, int(active.score() * 100)])
+		_maybe_offer_boost()
 	# Stamina: hanya yang BENAR-BENAR berkontribusi di fase ini (skill relevan > 0)
 	# yang capek; sisanya (termasuk yang skill-nya tak dipakai fase ini) ikut pulih.
 	var drain := float(_bj.get("stamina_drain", 9.0))
@@ -119,16 +123,8 @@ func _advance_week() -> void:
 			t.stamina = clampf(t.stamina + rec, 0.0, 100.0)
 		if before > tired and t.stamina <= tired:
 			emit_signal("notify", "%s kelelahan 😴 — istirahatkan (Tarik) biar pulih!" % t.person_name)
-
-func _phase_skill() -> String:
-	if active == null:
-		return ""
-	match active.phase:
-		FeatureProject.PRD: return "product"
-		FeatureProject.DEV, FeatureProject.FIX: return "coding"
-		FeatureProject.QA: return "qa"
-		_: return ""
-	# Pertumbuhan user organik dari fitur yang sudah dirilis (makin bagus makin tumbuh).
+	# Ekonomi & waktu mingguan: user organik dari fitur rilis, kas (revenue − burn),
+	# maju 1 minggu, lalu cek runway (kas < 0 = kalah).
 	users += int(round(_released_score_sum() * float(_bj.get("organic_per_score", 40.0))))
 	economy.cash += weekly_revenue() - weekly_burn()
 	week += 1
@@ -140,6 +136,16 @@ func _phase_skill() -> String:
 		running = false
 		speed = 0
 		emit_signal("game_over", "Runway habis — kas di bawah nol.")
+
+func _phase_skill() -> String:
+	if active == null:
+		return ""
+	match active.phase:
+		FeatureProject.PRD: return "product"
+		FeatureProject.DEV, FeatureProject.FIX: return "coding"
+		FeatureProject.QA: return "qa"
+		_: return ""
+	return ""
 
 # --- keuangan mingguan ---
 
@@ -172,10 +178,63 @@ func develop(def: Dictionary) -> bool:
 		return false
 	active = FeatureProject.new(def)
 	assigned = talents.duplicate()  # default: semua ditugaskan
+	boost_pending = false
 	pool.erase(def)
 	emit_signal("notify", "Mulai develop: %s (fase PRD — tugaskan Product!)" % active.label)
 	emit_signal("changed")
 	return true
+
+# --- Boost: judi opt-in saat Development (§6.4) ---
+
+## Sesekali, di tengah Development, tim menawarkan terobosan. Sekali per fitur.
+func _maybe_offer_boost() -> void:
+	if active == null or boost_pending or active.boost_used or active.boost_offered:
+		return
+	if active.phase != FeatureProject.DEV:
+		return
+	var bcfg: Dictionary = _fcfg.get("boost", {})
+	if active.dev_progress() < float(bcfg.get("offer_at_progress", 0.25)):
+		return
+	if randf() >= float(bcfg.get("chance_per_week", 0.5)):
+		return
+	active.boost_offered = true
+	boost_pending = true
+	_boost_chance = active.boost_success_chance(assigned, bcfg)
+	emit_signal("notify", "💡 %s nawarin terobosan buat %s — peluang sukses %d%%. Ambil risikonya?" % [
+		_boost_proposer(), active.label, int(_boost_chance * 100)])
+	emit_signal("changed")
+
+func boost_chance() -> float:
+	return _boost_chance
+
+func _boost_proposer() -> String:
+	for t in assigned:
+		if t.coding > 0:
+			return t.person_name
+	return "Tim"
+
+func accept_boost() -> void:
+	if not boost_pending or active == null:
+		return
+	boost_pending = false
+	active.boost_used = true
+	var bcfg: Dictionary = _fcfg.get("boost", {})
+	var success := randf() < _boost_chance
+	active.resolve_boost(success, bcfg)
+	if success:
+		emit_signal("notify", "🚀 Terobosan BERHASIL! Development %s melonjak." % active.label)
+	else:
+		emit_signal("notify", "💥 Terobosan GAGAL — bug menumpuk di %s. (QA bakal sibuk)" % active.label)
+	emit_signal("changed")
+
+func decline_boost() -> void:
+	if not boost_pending:
+		return
+	boost_pending = false
+	if active != null:
+		active.boost_used = true
+	emit_signal("notify", "Main aman — terobosan ditolak.")
+	emit_signal("changed")
 
 func set_focus_mode(m: String) -> void:
 	if active != null:
@@ -205,8 +264,11 @@ func phase_need() -> String:
 		_: return "siap rilis"
 
 func release() -> bool:
-	if active == null or not active.is_done():
+	# Development (fungsi inti) wajib penuh; sisanya boleh dikorbankan = rilis cepat (§6.2).
+	if active == null or not active.can_release():
 		return false
+	boost_pending = false
+	var rushed := not active.is_done()
 	var sc := active.score()
 	var review := int(round(sc * float(_bj.get("review_max", 40.0))))
 	var rmult := _review_mult(review)
@@ -214,7 +276,10 @@ func release() -> bool:
 	var gained := int(round(sc * float(_bj.get("users_per_release", 4500.0)) * rmult))
 	users += gained
 	released.append({ "label": active.label, "score": sc, "review": review })
-	emit_signal("notify", "📰 %s — Review %d/40 → %s +%s user" % [active.label, review, _review_verdict(review), _group(gained)])
+	var tag := " ⚡(cepat)" if rushed else ""
+	emit_signal("notify", "📰 %s%s — Review %d/40 → %s +%s user" % [active.label, tag, review, _review_verdict(review), _group(gained)])
+	if rushed:
+		_resolve_incident(active)
 	active = null
 	assigned.clear()
 	emit_signal("changed")
@@ -225,6 +290,22 @@ func release() -> bool:
 		speed = 0
 		emit_signal("game_won", users)
 	return true
+
+## Risiko insiden rilis cepat (§6.2): makin tipis Security & makin banyak bug, makin
+## besar peluang akun diretas / data bocor / server down → user kabur massal.
+func _resolve_incident(feat) -> void:
+	var rc: Dictionary = _bj.get("rush", {})
+	var gap := 1.0 - feat.security_ratio()
+	var chance := clampf(
+		gap * float(rc.get("incident_per_security_gap", 0.6)) + feat.bugs * float(rc.get("incident_per_bug", 0.02)),
+		0.0, float(rc.get("incident_max", 0.9)))
+	if randf() >= chance:
+		return
+	var lost := int(round(users * float(rc.get("incident_user_loss_pct", 0.3))))
+	users = maxi(0, users - lost)
+	var fine := float(rc.get("incident_fine", 0.0))
+	economy.cash -= fine
+	emit_signal("notify", "⚠️ INSIDEN! %s kebobolan — %s user kabur. Akibat rilis kecepetan tanpa Security." % [feat.label, _group(lost)])
 
 func _review_mult(r: int) -> float:
 	if r >= int(_bj.get("review_viral_at", 34)): return float(_bj.get("review_mult_viral", 1.8))

@@ -29,6 +29,9 @@ var _prd_progress: float = 0.0
 var _qa_progress: float = 0.0
 var dev_req: float = 50.0      # ukuran fitur (effort Development)
 
+var boost_offered: bool = false    # boost §6.4 sudah pernah ditawarkan utk fitur ini
+var boost_used: bool = false       # sudah diambil/ditolak (sekali per fitur)
+
 const MODE_LABEL := { "normal": "Normal", "kebut": "Kebut Rilis", "matang": "Matang", "riset": "Riset" }
 
 func _init(d: Dictionary = {}) -> void:
@@ -115,8 +118,35 @@ func score() -> float:
 	var scale := maxf(1.0, dev_req)
 	var cre := clampf(dims.creativity / (scale * 0.6), 0.0, 1.0)
 	var ux := clampf(dims.ui_ux / (scale * 0.6), 0.0, 1.0)
-	var sec := clampf(dims.security / (scale * 0.5), 0.0, 1.0)
+	var sec := security_ratio()
 	var dev := clampf(dims.development / scale, 0.0, 1.0)
 	var q := (cre + ux + sec + dev) / 4.0
 	var bug_pen := clampf(bugs_found / (scale * 0.3), 0.0, 1.0) * 0.4
 	return clampf(q - bug_pen, 0.0, 1.0)
+
+## Progres Development 0..1 — syarat tawaran boost & ambang rilis cepat.
+func dev_progress() -> float:
+	return clampf(dims.development / maxf(1.0, dev_req), 0.0, 1.0)
+
+## Rasio Security 0..1 — dipakai skor & perhitungan risiko insiden rilis cepat.
+func security_ratio() -> float:
+	return clampf(dims.security / maxf(1.0, dev_req * 0.5), 0.0, 1.0)
+
+## Boleh dirilis bila Development (fungsi inti) sudah penuh — walau fase belum DONE
+## (= rilis cepat / §6.2). Komponen lain yang kurang jadi konsekuensi, bukan blokir.
+func can_release() -> bool:
+	return dims.development >= dev_req
+
+## Peluang sukses boost dari skill coding tim yang ditugaskan (§6.4). cfg = feature_dev.boost.
+func boost_success_chance(talents: Array, cfg: Dictionary) -> float:
+	var coding := _sum(talents, "coding")
+	var base := float(cfg.get("base_success", 0.35))
+	var per := float(cfg.get("success_per_coding", 0.04))
+	return clampf(base + coding * per, 0.0, float(cfg.get("max_success", 0.9)))
+
+## Terapkan hasil boost: sukses → lonjakan Development; gagal → bug menumpuk (§6.4).
+func resolve_boost(success: bool, cfg: Dictionary) -> void:
+	if success:
+		dims.development += dev_req * float(cfg.get("success_gain", 0.5))
+	else:
+		bugs += dev_req * float(cfg.get("fail_bugs", 0.6))

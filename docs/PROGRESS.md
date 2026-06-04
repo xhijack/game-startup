@@ -22,8 +22,16 @@ Desain: `docs/BeJek_CoreSystems.md`.
 - **Mode Fokus:** Normal / Kebut / Matang / Riset (multiplier dev/quality/bug).
 - **Skor Review /40** saat rilis → multiplier user (viral≥34:1.8×, dst).
 - **User (MAU)** tumbuh dari rilis + organik → **revenue = user × ARPU**.
+- **Rilis Cepat (§6.2):** boleh rilis begitu Development penuh walau fase belum DONE →
+  skor lebih rendah + **risiko insiden** (Security tipis/bug → user kabur massal).
+- **Boost / terobosan (§6.4):** judi opt-in saat Development — peluang sukses dari
+  skill coding tim; sukses → lonjakan Dev, gagal → bug menumpuk.
 - Modal awal **Rp 200 jt**. Founder digaji Rp 1.000.
 - Aset CC0 (Kenney) untuk kantor + karakter, audio CC0.
+
+> **Fix penting (sesi ini):** loop mingguan BeJek (kas burn, user organik, maju minggu,
+> cek runway/game-over) sempat jadi *dead code* di `_phase_skill()` → tidak pernah jalan.
+> Sudah dipindah ke `_advance_week()`; tension runway aktif lagi.
 
 **Data/balance:** `data/balance.json` (`feature_dev`, `bejek`), `data/bejek_v1.json` (6 fitur v1).
 
@@ -31,15 +39,17 @@ Desain: `docs/BeJek_CoreSystems.md`.
 Scene `scenes/main/main.tscn`. Office isometric, talent (level/stamina/train), funding+dilusi, event, kombinasi R&D, kompetitor+promo, multi-layanan, ekspansi kota, upgrade kantor, win=IPO.
 
 ## Testing
-- `tests/verify_core.gd` (**60 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`.
+- `tests/verify_core.gd` (**68 assertion**, headless): `godot --headless --path . -s res://tests/verify_core.gd`
+  (termasuk rilis-cepat `can_release`/`security_ratio` & boost `boost_success_chance`/`resolve_boost`).
 - `tools/bejek_sim.gd` — simulasi loop BeJek (validasi pacing).
 - GUT belum terpasang (runner sendiri dipakai).
 
 ## NEXT (urutan §9 BeJek)
-1. **Boost** opt-in (judi saat develop) — §6.4
-2. **Rush-release** (rilis cepat skip QA → cepat tapi skor turun + insiden) — §6.2
+1. ✅ **Boost** opt-in (judi saat develop) — §6.4 *(selesai)*
+2. ✅ **Rush-release** (rilis cepat → cepat tapi skor turun + insiden) — §6.2 *(selesai)*
 3. **Proposal / versi v2+** (buka fitur lanjutan)
-4. Hiring channels berbiaya, balancing playtest
+4. Hiring channels berbiaya (mulut-ke-mulut/koran/internet/TV/headhunter) — §3.2
+5. Balancing playtest (boost chance, rush incident, runway pacing)
 
 ## Catatan balance (perlu playtest)
 - Stamina drain/recover, pacing minggu, biaya/revenue, threshold review — semua di `data/*.json`, gampang di-tweak.

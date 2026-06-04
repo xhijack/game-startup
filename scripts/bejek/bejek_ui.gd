@@ -129,10 +129,25 @@ func _refresh_active() -> void:
 		_lbl(_active_box, "   %s: %d" % [dim[1], int(a.dims[dim[0]])])
 	if a.bugs_found > 0.5:
 		_lbl(_active_box, "   🐞 Bug ditemukan: %d" % int(a.bugs_found))
+	# Boost (§6.4): tawaran judi opt-in di tengah Development.
+	if _game.boost_pending:
+		var bl := _lbl(_active_box, "💡 Terobosan ditawarkan! Sukses %d%% → lonjakan Dev · gagal → bug." % int(_game.boost_chance() * 100))
+		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		bl.add_theme_color_override("font_color", Color(1, 0.8, 0.3))
+		var brow := HBoxContainer.new()
+		_active_box.add_child(brow)
+		var ab := _btn(brow, "✅ Ambil", func(): _game.accept_boost())
+		ab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var db := _btn(brow, "❌ Tolak", func(): _game.decline_boost())
+		db.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if a.is_done():
 		var b := _btn(_active_box, "🚀 RILIS (skor %d%%)" % int(a.score() * 100), func(): _game.release())
 		b.add_theme_color_override("font_color", Color(0.4, 1, 0.5))
 	else:
+		# Rilis cepat (§6.2): aktif begitu Development penuh, walau belum matang.
+		if a.can_release():
+			var rb := _btn(_active_box, "⚡ Rilis Cepat (skor %d%% — berisiko)" % int(a.score() * 100), func(): _game.release())
+			rb.add_theme_color_override("font_color", Color(1, 0.6, 0.3))
 		# Roster: tugaskan / tarik employee dari fitur ini (tombol full-width).
 		_lbl(_active_box, "Tugaskan tim:")
 		for t in _game.talents:

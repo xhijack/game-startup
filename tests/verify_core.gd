@@ -178,5 +178,27 @@ func _initialize() -> void:
 	feat2.apply_week([Talent.new({ "product": 10, "stamina": 100 }), Talent.new({ "management": 4, "stamina": 100 })], fcfg)
 	_almost(feat2.dims.creativity, 12.0, 0.01, "feat_management_boost")
 
+	# --- BeJek: Rilis cepat (§6.2) — Development wajib penuh, sisanya konsekuensi ---
+	var fr := FeatureProject.new({ "id": "r", "dev": 50 })
+	_ok(not fr.can_release(), "rush_blocked_when_dev_empty")
+	fr.dims.development = 50.0
+	_ok(fr.can_release(), "rush_ok_when_dev_full")
+	fr.dims.security = 0.0
+	_almost(fr.security_ratio(), 0.0, 0.001, "rush_security_ratio_empty")
+	fr.dims.security = 25.0  # dev_req*0.5 = 25 → ratio penuh
+	_almost(fr.security_ratio(), 1.0, 0.001, "rush_security_ratio_full")
+
+	# --- BeJek: Boost (§6.4) — peluang dari coding, sukses naikkan Dev, gagal tambah bug ---
+	var bcfg := { "base_success": 0.3, "success_per_coding": 0.05, "max_success": 0.9, "success_gain": 0.5, "fail_bugs": 0.6 }
+	var fb := FeatureProject.new({ "id": "b", "dev": 50 })
+	_almost(fb.boost_success_chance([Talent.new({ "coding": 8, "stamina": 100 })], bcfg), 0.7, 0.001, "boost_chance_from_coding")
+	_almost(fb.boost_success_chance([Talent.new({ "coding": 20, "stamina": 100 })], bcfg), 0.9, 0.001, "boost_chance_capped")
+	fb.dims.development = 10.0
+	fb.resolve_boost(true, bcfg)
+	_almost(fb.dims.development, 35.0, 0.001, "boost_success_raises_dev")
+	var fb2 := FeatureProject.new({ "id": "b2", "dev": 50 })
+	fb2.resolve_boost(false, bcfg)
+	_almost(fb2.bugs, 30.0, 0.001, "boost_fail_adds_bugs")
+
 	print("[VERIFY] PASS=%d FAIL=%d" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
